@@ -1,0 +1,227 @@
+# Development Tasks - Postman-like Application
+
+## Phase 1: Core Layout & Basic Request
+
+### Task 1.1: Project Setup
+- [ ] Initialize TanStack Start project with Bun
+- [ ] Install and configure Shadcn UI
+- [ ] Set up TailwindCSS
+- [ ] Install required dependencies (@tanstack/react-query, zustand, zod, lucide-react)
+- [ ] Create basic file structure
+- [ ] Set up Zod schemas (see validation-schemas.md)
+
+### Task 1.2: Basic Layout
+- [ ] Create AppShell component with three-column layout
+- [ ] Implement responsive design for different screen sizes
+- [ ] Add basic styling and theme support
+- [ ] Create placeholder components for each section
+
+### Task 1.3: URL Input & Method Selector
+- [ ] Create UrlInput component
+- [ ] Implement HTTP method dropdown
+- [ ] Add URL validation
+- [ ] Style to match reference design
+
+### Task 1.4: Basic HTTP Request
+- [ ] Create useHttp hook with TanStack Query
+- [ ] Implement basic GET request mutation
+- [ ] Add Zod validation for requests/responses (see validation-schemas.md)
+- [ ] Add error handling with query error boundaries
+- [ ] Create simple response display component
+
+### Task 1.5: Send Button Integration
+- [ ] Add Send button to request editor
+- [ ] Connect button to HTTP request execution
+- [ ] Add loading state during request
+- [ ] Display basic response (status, body)
+
+## Phase 2: Request Building Features
+
+### Task 2.1: Headers Management
+- [ ] Create HeadersEditor component (see components-mapping.md)
+- [ ] Implement add/remove header functionality
+- [ ] Add Zod validation for headers (see validation-schemas.md)
+- [ ] Support common header presets
+
+### Task 2.2: Query Parameters
+- [ ] Create ParamsEditor component
+- [ ] Implement URL parameter parsing and display
+- [ ] Add/remove query parameters
+- [ ] Sync parameters with URL input
+
+### Task 2.3: Body Editor
+- [ ] Create BodyEditor component (see components-mapping.md)
+- [ ] Support JSON body with Zod validation (see validation-schemas.md)
+- [ ] Support raw text input
+- [ ] Add body type selector
+- [ ] Implement method-body compatibility checks
+
+### Task 2.4: Tab Management
+- [ ] Create TabBar component for requests
+- [ ] Implement tab creation, deletion, naming
+- [ ] Add active tab state management
+- [ ] Persist tab state in localStorage
+
+### Task 2.5: Request Tabs Navigation
+- [ ] Create navigation tabs (Params, Headers, Auth, Body)
+- [ ] Implement tab switching
+- [ ] Add content area for each tab
+- [ ] Style to match reference design
+
+## Phase 3: Response Display Features
+
+### Task 3.1: Formatted Response Display
+- [ ] Create ResponseViewer component
+- [ ] Implement JSON formatting with syntax highlighting
+- [ ] Support raw text display
+- [ ] Add copy-to-clipboard functionality
+
+### Task 3.2: Response Headers
+- [ ] Create HeadersPanel component
+- [ ] Display response headers in table format
+- [ ] Add search/filter functionality
+- [ ] Show both request and response headers
+
+### Task 3.3: Response Metadata
+- [ ] Display status code with color coding
+- [ ] Show response time in milliseconds
+- [ ] Calculate and display response size
+- [ ] Add timestamp display
+
+### Task 3.4: Cookies Display
+- [ ] Create CookiesPanel component
+- [ ] Parse and display response cookies
+- [ ] Show cookie attributes (domain, path, expires)
+- [ ] Add cookie management UI
+
+### Task 3.5: Request/Response Tabs
+- [ ] Create tabs for switching between request and response view
+- [ ] Display sent request details
+- [ ] Show full request headers and body
+- [ ] Add export request functionality
+
+## Phase 4: Organization & Persistence
+
+### Task 4.1: Sidebar Structure
+- [ ] Create Sidebar component
+- [ ] Implement collections list
+- [ ] Add drafts section
+- [ ] Create request history list
+
+### Task 4.2: Collections Management
+- [ ] Implement collection CRUD operations
+- [ ] Add drag-and-drop for organizing requests
+- [ ] Create collection folder structure
+- [ ] Add collection settings
+
+### Task 4.3: Request Persistence
+- [ ] Implement TanStack Query with LocalStorage adapter
+- [ ] Add Zod schema validation for stored data
+- [ ] Create request export/import with validation
+- [ ] Handle storage quota management
+
+### Task 4.4: Draft Management
+- [ ] Implement auto-save for unsaved requests
+- [ ] Add draft cleanup functionality
+- [ ] Create draft recovery system
+- [ ] Show draft count in sidebar
+
+### Task 4.5: Request History
+- [ ] Track sent requests in history
+- [ ] Implement history search
+- [ ] Add history pagination
+- [ ] Create history clearing options
+
+## Phase 5: Polish & User Experience
+
+### Task 5.1: Keyboard Shortcuts
+- [ ] Add Ctrl+Enter to send request
+- [ ] Implement Ctrl+T for new tab
+- [ ] Add Ctrl+W to close tab
+- [ ] Create shortcut help modal
+
+### Task 5.2: Theme Support
+- [ ] Implement dark/light theme toggle
+- [ ] Add system theme detection
+- [ ] Persist theme preference
+- [ ] Ensure all components support themes
+
+### Task 5.3: Error Handling
+- [ ] Add comprehensive error messages
+- [ ] Implement network error handling
+- [ ] Add validation error display
+- [ ] Create error recovery options
+
+### Task 5.4: Performance Optimization
+- [ ] Implement response virtualization
+- [ ] Add request debouncing
+- [ ] Optimize JSON parsing
+- [ ] Add loading states
+
+### Task 5.5: Final Polish
+- [ ] Add animations and transitions
+- [ ] Implement responsive design
+- [ ] Add accessibility features
+- [ ] Create user documentation
+
+## Implementation Order Priority
+
+### High Priority (MVP Core)
+1. Project Setup (1.1)
+2. Basic Layout (1.2)
+3. URL Input & Method Selector (1.3)
+4. Basic HTTP Request (1.4)
+5. Send Button Integration (1.5)
+
+### Medium Priority (Essential Features)
+6. Headers Management (2.1)
+7. Body Editor (2.3)
+8. Formatted Response Display (3.1)
+9. Response Metadata (3.3)
+10. Tab Management (2.4)
+
+### Low Priority (Nice to Have)
+11. Query Parameters (2.2)
+12. Collections Management (4.2)
+13. Keyboard Shortcuts (5.1)
+14. Theme Support (5.2)
+15. Performance Optimization (5.4)
+
+## Dependencies Between Tasks
+
+- Task 1.4 depends on Task 1.3
+- Task 2.3 depends on Task 2.1
+- Task 3.1 depends on Task 1.5
+- Task 4.3 depends on Task 4.1
+- Task 5.4 depends on Task 3.1 and 2.4
+
+## Estimated Timeline
+
+- **Phase 1**: 2-3 days (Core functionality)
+- **Phase 2**: 3-4 days (Request building)
+- **Phase 3**: 2-3 days (Response display)
+- **Phase 4**: 3-4 days (Organization)
+- **Phase 5**: 2-3 days (Polish)
+
+**Total Estimated Time**: 12-17 days for complete MVP
+
+## Testing Strategy
+
+### Unit Tests
+- HTTP request utilities
+- JSON formatting functions
+- Storage operations
+- Validation functions
+
+### Integration Tests
+- Request flow end-to-end
+- Tab management
+- Persistence operations
+- Error handling
+
+### Manual Testing Checklist
+- All HTTP methods work correctly
+- Response formatting is accurate
+- Tab operations work smoothly
+- Data persists correctly
+- Error states are handled gracefully
