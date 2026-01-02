@@ -13,7 +13,8 @@ This folder contains comprehensive documentation for building the Postman-like w
   - Data models (Request, Response, Collection)
   - State management architecture (Zustand + TanStack Query)
   - Development phases and timeline
-- **Key Updates**: Updated to include new tech stack and references to components-mapping.md
+  - Validation patterns with Zod
+- **References**: components-mapping.md, development-guide.md
 
 ### 2. **tasks.md** - Development Task Breakdown
 - **Purpose**: Detailed task list for implementation
@@ -23,17 +24,20 @@ This folder contains comprehensive documentation for building the Postman-like w
   - Dependencies between tasks
   - Estimated timeline (12-17 days total)
   - Testing strategy
-- **Key Updates**: Added references to validation-schemas.md and components-mapping.md
+  - Validation requirements for each task
+- **References**: components-mapping.md, development-guide.md
 
 ### 3. **components-mapping.md** - UI Components Specification
-- **Purpose**: Detailed mapping of application components to Shadcn UI
+- **Purpose**: Detailed mapping of application components to Shadcn UI with @base-ui/react primitives
 - **Contents**:
   - Complete file hierarchy structure
   - Component specifications (styles, interactions, Shadcn mapping)
   - Required Shadcn components list
+  - @base-ui/react primitive dependencies (single package with subpaths)
   - Custom component extensions
   - Styling patterns and accessibility features
-- **Key Features**: Simple text format without code examples (as requested)
+  - Validation integration points
+- **References**: plan.md, development-guide.md
 
 ### 4. **state-management.md** - State Architecture
 - **Purpose**: Detailed state management implementation
@@ -43,29 +47,21 @@ This folder contains comprehensive documentation for building the Postman-like w
   - Selectors and custom hooks
   - Performance optimizations
   - Error handling patterns
-- **Key Updates**: Enhanced with TanStack Query integration examples
+  - Validation integration with Zod
+- **References**: development-guide.md
 
-### 5. **validation-schemas.md** - Zod Validation Schemas
-- **Purpose**: Complete validation system using Zod
-- **Contents**:
-  - All data schemas (Request, Response, Collection)
-  - Validation utilities and hooks
-  - Error handling patterns
-  - React hook integration
-  - Testing utilities
-- **Key Features**: Type-safe validation throughout the application
-
-### 6. **development-guide.md** - Implementation Guide
+### 5. **development-guide.md** - Implementation Guide
 - **Purpose**: Step-by-step development instructions
 - **Contents**:
   - Setup instructions with Bun
   - Dependency management
   - File structure and coding standards
+  - Validation patterns with Zod
   - Testing and debugging strategies
   - Deployment instructions
-- **Key Updates**: Updated for Bun runtime and new dependencies
+- **References**: All other documents
 
-### 7. **ui-components.md** - Original UI Specifications
+### 6. **ui-components.md** - Original UI Specifications
 - **Purpose**: Original component hierarchy and specifications
 - **Contents**:
   - Component hierarchy tree
@@ -79,29 +75,30 @@ This folder contains comprehensive documentation for building the Postman-like w
 ```
 plan.md (Master Plan)
 ├── References: components-mapping.md
-├── References: validation-schemas.md
-└── References: state-management.md
+├── References: development-guide.md
+└── Provides: Validation patterns
 
 tasks.md (Implementation Tasks)
 ├── References: components-mapping.md
-├── References: validation-schemas.md
-└── References: development-guide.md
+├── References: development-guide.md
+└── Provides: Task-specific validation requirements
 
 components-mapping.md (UI Specs)
 ├── Depends on: plan.md
-└── Implements: Shadcn UI components
-
-validation-schemas.md (Validation)
-├── Used by: All components
-└── Integrates with: state-management.md
+├── Implements: Shadcn UI with @base-ui/react primitives
+└── Provides: Component validation integration points
 
 state-management.md (State Architecture)
-├── Uses: validation-schemas.md
+├── Uses: development-guide.md validation patterns
 └── Implements: TanStack Query + Zustand
 
 development-guide.md (Setup Guide)
 ├── References: All documents
+├── Provides: Validation patterns and examples
 └── Provides: Setup instructions
+
+ui-components.md (Reference)
+└── Provides: Original component hierarchy
 ```
 
 ## 🎯 Tech Stack Summary
@@ -111,8 +108,9 @@ development-guide.md (Setup Guide)
 | **TanStack Start** | Framework | plan.md, development-guide.md |
 | **TanStack Query** | Async State | state-management.md, plan.md |
 | **Zustand** | Client State | state-management.md |
-| **Zod** | Validation | validation-schemas.md |
+| **Zod** | Validation | development-guide.md, plan.md, tasks.md |
 | **Shadcn UI** | Components | components-mapping.md |
+| **BaseUI** | Primitives (@base-ui/react - single package with subpaths) | development-guide.md |
 | **Bun** | Runtime | development-guide.md, plan.md |
 | **TailwindCSS** | Styling | components-mapping.md |
 | **TypeScript** | Types | All documents |
@@ -122,8 +120,8 @@ development-guide.md (Setup Guide)
 1. **Read First**: `plan.md` - Understand the overall architecture
 2. **Setup**: `development-guide.md` - Install dependencies and configure environment
 3. **Components**: `components-mapping.md` - Understand UI component structure
-4. **Validation**: `validation-schemas.md` - Implement type-safe validation
-5. **State**: `state-management.md` - Implement state management
+4. **State**: `state-management.md` - Implement state management
+5. **Validation**: `development-guide.md` - Learn validation patterns
 6. **Tasks**: `tasks.md` - Follow the development task list
 
 ## 📋 Development Workflow
@@ -141,7 +139,7 @@ Each phase corresponds to sections in `tasks.md` with detailed implementation st
 - **Dependencies**: See `development-guide.md` → "Dependency Management"
 - **File Structure**: See `plan.md` → "File Structure"
 - **Component List**: See `components-mapping.md` → "File Hierarchy"
-- **Validation Rules**: See `validation-schemas.md` → "Core Schemas"
+- **Validation Rules**: See `development-guide.md` → "Validation Patterns"
 - **State Patterns**: See `state-management.md` → "Store Implementation"
 
 ## 📝 Notes
@@ -154,11 +152,11 @@ Each phase corresponds to sections in `tasks.md` with detailed implementation st
 
 ## 🔄 Last Updated
 
-- **plan.md**: Updated with TanStack Query, Zod, Bun integration
-- **tasks.md**: Updated with new tech stack references
-- **components-mapping.md**: Created with detailed component specifications
-- **validation-schemas.md**: Created with comprehensive Zod schemas
-- **state-management.md**: Updated with TanStack Query patterns
-- **development-guide.md**: Updated for Bun runtime and dependencies
+- **plan.md**: Updated with TanStack Query, Zod, Bun integration, @base-ui/react primitives (single package), validation patterns
+- **tasks.md**: Updated with new tech stack references, validation requirements, and new reference style
+- **components-mapping.md**: Created with detailed component specifications, @base-ui/react integration (single package with subpaths), and validation integration
+- **state-management.md**: Updated with TanStack Query patterns and Zod integration
+- **development-guide.md**: Updated for Bun runtime, @base-ui/react dependencies (single package), and comprehensive validation patterns
+- **README.md**: Updated to reflect new documentation structure, @base-ui/react integration (single package with subpaths), and proper interlinking
 
-All documentation files are now synchronized and ready for development to begin.
+All documentation files are now synchronized, properly interlinked, and ready for development to begin.

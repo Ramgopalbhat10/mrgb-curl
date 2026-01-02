@@ -61,7 +61,7 @@ chore: build process or dependency updates
 ```
 src/
 ├── components/           # React components
-│   ├── ui/              # Shadcn UI components
+│   ├── ui/              # Shadcn UI components (auto-generated with @base-ui/react primitives)
 │   ├── AppShell.tsx     # Main layout
 │   ├── Sidebar/         # Left sidebar components
 │   ├── RequestEditor/   # Request building components
@@ -81,7 +81,7 @@ src/
 │   ├── request.ts       # Request types
 │   ├── response.ts      # Response types
 │   ├── collection.ts    # Collection types
-│   └── schemas.ts       # Zod schemas
+│   └── validation.ts    # Zod schemas and validation utilities
 ├── utils/               # Utility functions
 │   ├── http.ts          # HTTP utilities
 │   ├── storage.ts       # Storage helpers
@@ -107,7 +107,13 @@ bun add @shadcn/ui tailwindcss class-variance-authority clsx tailwind-merge
 bun add zod
 
 # Icons and utilities
-bun add lucide-react @radix-ui/react-slot @radix-ui/react-select @radix-ui/react-tabs @radix-ui/react-scroll-area @radix-ui/react-dropdown-menu @radix-ui/react-separator @radix-ui/react-dialog @radix-ui/react-popover @radix-ui/react-tooltip @radix-ui/react-switch @radix-ui/react-checkbox @radix-ui/react-label
+bun add lucide-react @base-ui/react
+
+# Note: BaseUI components are imported as subpaths:
+# import { Popover } from '@base-ui/react/popover';
+# import { Dialog } from '@base-ui/react/dialog';
+# import { Select } from '@base-ui/react/select';
+# etc.
 
 # State management
 bun add zustand
@@ -145,11 +151,15 @@ bunx shadcn-ui@latest add button input select tabs card badge table textarea scr
 // components/Example/Example.tsx
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { z } from 'zod';
 
-interface ExampleProps {
-  className?: string;
-  children: React.ReactNode;
-}
+// Zod schema for props
+const ExamplePropsSchema = z.object({
+  className: z.string().optional(),
+  children: z.any(),
+});
+
+type ExampleProps = z.infer<typeof ExamplePropsSchema>;
 
 export const Example: React.FC<ExampleProps> = ({ 
   className, 
@@ -167,20 +177,88 @@ export const Example: React.FC<ExampleProps> = ({
 ```typescript
 // hooks/useExample.ts
 import { useState, useCallback } from 'react';
-import { useAppStore } from '@/stores/appStore';
+import { useAppStore } from '@/stores/clientStore';
+import { z } from 'zod';
 
 export const useExample = () => {
   const [state, setState] = useState();
   const { someStoreValue } = useAppStore();
 
   const doSomething = useCallback(() => {
-    // Implementation
+    // Implementation with Zod validation
+    const schema = z.object({ /* ... */ });
+    const result = schema.safeParse(data);
+    if (!result.success) {
+      // Handle validation error
+      return;
+    }
+    // Continue with validated data
   }, [someStoreValue]);
 
   return {
     state,
     doSomething,
   };
+};
+```
+
+## Validation Patterns
+
+### Zod Schema Examples
+```typescript
+// URL validation
+const UrlSchema = z.string().url().min(1).max(2048);
+
+// HTTP method validation
+const HttpMethodSchema = z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH']);
+
+// Headers validation
+const HeadersSchema = z.record(z.string().min(1), z.string().max(8192));
+
+// JSON body validation
+const JsonBodySchema = z.string().refine(
+  (json) => {
+    try {
+      JSON.parse(json);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Invalid JSON format' }
+);
+```
+
+### React Hook Integration
+```typescript
+// useValidation hook
+import { useState, useCallback } from 'react';
+import { z } from 'zod';
+
+export const useValidation = <T extends z.ZodSchema>(
+  schema: T,
+  initialValues: z.infer<T>
+) => {
+  const [values, setValues] = useState(initialValues);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = useCallback((data: z.infer<T>) => {
+    const result = schema.safeParse(data);
+    if (!result.success) {
+      const errorMap = result.error.issues.reduce((acc, issue) => {
+        if (issue.path.length > 0) {
+          acc[issue.path.join('.')] = issue.message;
+        }
+        return acc;
+      }, {} as Record<string, string>);
+      setErrors(errorMap);
+      return false;
+    }
+    setErrors({});
+    return true;
+  }, [schema]);
+
+  return { values, errors, validate, setValues };
 };
 ```
 
@@ -494,6 +572,7 @@ VITE_ENABLE_ANALYTICS=false
 - [TanStack Start Docs](https://tanstack.com/start/latest)
 - [TanStack Query Docs](https://tanstack.com/query/latest)
 - [Shadcn UI Docs](https://ui.shadcn.com/)
+- [BaseUI Docs](https://base-ui.com/react)
 - [Zod Docs](https://zod.dev/)
 - [Bun Docs](https://bun.sh/docs)
 - [Zustand Docs](https://zustand-demo.pmnd.rs/)

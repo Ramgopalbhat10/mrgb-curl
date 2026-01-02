@@ -4,28 +4,10 @@
 
 ```
 src/components/
-├── ui/                          # Shadcn UI components (auto-generated)
+├── ui/                          # Shadcn UI components (auto-generated with @base-ui/react primitives)
 │   ├── button.tsx               # @shadcn/button
 │   ├── input.tsx                # @shadcn/input
 │   ├── select.tsx               # @shadcn/select
-│   ├── tabs.tsx                 # @shadcn/tabs
-│   ├── card.tsx                 # @shadcn/card
-│   ├── badge.tsx                # @shadcn/badge
-│   ├── table.tsx                # @shadcn/table
-│   ├── textarea.tsx             # @shadcn/textarea
-│   ├── scroll-area.tsx          # @shadcn/scroll-area
-│   ├── dropdown-menu.tsx        # @shadcn/dropdown-menu
-│   ├── separator.tsx            # @shadcn/separator
-│   ├── sidebar.tsx              # @shadcn/sidebar
-│   ├── sheet.tsx                # @shadcn/sheet
-│   ├── dialog.tsx               # @shadcn/dialog
-│   ├── popover.tsx              # @shadcn/popover
-│   ├── tooltip.tsx              # @shadcn/tooltip
-│   ├── switch.tsx               # @shadcn/switch
-│   ├── checkbox.tsx             # @shadcn/checkbox
-│   ├── label.tsx                # @shadcn/label
-│   ├── skeleton.tsx             # @shadcn/skeleton
-│   └── spinner.tsx              # @shadcn/spinner
 ├── AppShell.tsx                 # Main layout wrapper
 ├── Sidebar/
 │   ├── index.tsx                # Sidebar container
@@ -416,7 +398,7 @@ src/components/
 - Color coding
 
 #### LoadingSpinner
-**Shadcn Components**: `spinner`, `skeleton`
+**Base UI Components**: `spinner`, `skeleton`
 **Purpose**: Loading state indicators
 **Styles**:
 - Overlay spinner
@@ -432,12 +414,19 @@ src/components/
 ## Component Dependencies
 
 ### Core Dependencies
-- `@shadcn/ui/*` - All UI components
-- `@radix-ui/*` - Primitive components
+- `@base-ui/react` - All UI components (imported as subpaths)
 - `class-variance-authority` - Variant styling
 - `clsx` - Conditional classes
 - `tailwind-merge` - Style merging
 - `lucide-react` - Icons
+
+**BaseUI Import Examples:**
+```typescript
+import { Popover } from '@base-ui/react/popover';
+import { Dialog } from '@base-ui/react/dialog';
+import { Select } from '@base-ui/react/select';
+import { Tabs } from '@base-ui/react/tabs';
+```
 
 ### Custom Hooks
 - `useValidation` - Zod validation

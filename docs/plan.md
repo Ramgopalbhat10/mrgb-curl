@@ -6,7 +6,7 @@ A minimal Postman clone for personal use with a clean, multi-column interface fo
 ## Tech Stack
 - **Framework**: TanStack Start
 - **Async State Management**: @tanstack/react-query
-- **UI Components**: Shadcn UI
+- **UI Components**: Shadcn UI with @base-ui/react primitives
 - **Validation**: Zod
 - **Runtime**: Bun
 - **Styling**: TailwindCSS
@@ -201,7 +201,7 @@ const useCollections = () => {
 2. **useSendRequest**: TanStack Query mutation for HTTP requests
 3. **useResponses**: TanStack Query for response data
 4. **useCollections**: TanStack Query for collections
-5. **useValidation**: Zod schema validation
+5. **useValidation**: Zod schema validation for forms and data
 
 ## HTTP Request Flow
 
@@ -238,10 +238,13 @@ const useCollections = () => {
 - Export/import functionality
 
 ### Validation Layer (Zod)
-- Schema validation for all data
+- Schema validation for all data (requests, responses, collections)
 - Type-safe API responses
-- Request/response validation
+- Request/response validation (URL format, headers, JSON body)
 - Storage data integrity
+- Error handling and user feedback
+
+**See [development-guide.md](./development-guide.md) for validation implementation patterns.**
 
 ## Development Phases
 
@@ -279,7 +282,7 @@ const useCollections = () => {
 ```
 src/
 ├── components/           # React components
-│   ├── ui/              # Shadcn UI components (auto-generated)
+│   ├── ui/                          # Shadcn UI components (auto-generated with @base-ui/react primitives)
 │   ├── AppShell.tsx     # Main layout
 │   ├── Sidebar/         # Left sidebar components
 │   ├── RequestEditor/   # Request building components
@@ -299,7 +302,7 @@ src/
 │   ├── request.ts       # Request types
 │   ├── response.ts      # Response types
 │   ├── collection.ts    # Collection types
-│   └── schemas.ts       # Zod schemas
+│   └── validation.ts    # Zod schemas and validation utilities
 ├── utils/               # Utility functions
 │   ├── http.ts          # HTTP utilities
 │   ├── storage.ts       # Storage helpers
@@ -319,7 +322,7 @@ src/
 2. **HTTP Client**: Native fetch with TanStack Query wrapper
 3. **Validation**: Zod schemas for type safety and validation
 4. **Runtime**: Bun for development and production
-5. **Component Library**: Shadcn UI for consistent design system
+5. **Component Library**: Shadcn UI with @base-ui/react primitives for consistent design system
 6. **Data Flow**: Unidirectional with optimistic updates
 7. **Error Handling**: Zod validation + TanStack Query error boundaries
 
