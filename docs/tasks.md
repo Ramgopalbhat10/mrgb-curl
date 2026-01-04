@@ -3,45 +3,45 @@
 ## Phase 1: Core Layout & Basic Request
 
 ### Task 1.1: Project Setup
-- [ ] Initialize TanStack Start project with Bun
-- [ ] Install and configure Shadcn UI
-- [ ] Set up TailwindCSS
-- [ ] Install required dependencies (@tanstack/react-query, zustand, zod, lucide-react)
-- [ ] Create basic file structure
-- [ ] Set up Zod validation schemas for requests, responses, and collections
+- [x] Initialize TanStack Start project with Bun
+- [x] Install and configure Shadcn UI
+- [x] Set up TailwindCSS
+- [x] Install required dependencies (@tanstack/react-query, zustand, zod, lucide-react)
+- [x] Create basic file structure
+- [x] Set up Zod validation schemas for requests, responses, and collections
 
 **References**: development-guide.md, plan.md
 
 ### Task 1.2: Basic Layout
-- [ ] Create AppShell component with three-column layout
-- [ ] Implement responsive design for different screen sizes
-- [ ] Add basic styling and theme support
-- [ ] Create placeholder components for each section
+- [x] Create AppShell component with three-column layout
+- [x] Implement responsive design for different screen sizes
+- [x] Add basic styling and theme support
+- [x] Create placeholder components for each section
 
 **References**: components-mapping.md, development-guide.md
 
 ### Task 1.3: URL Input & Method Selector
-- [ ] Create UrlInput component
-- [ ] Implement HTTP method dropdown
-- [ ] Add URL validation
-- [ ] Style to match reference design
+- [x] Create UrlInput component
+- [x] Implement HTTP method dropdown
+- [x] Add URL validation
+- [x] Style to match reference design
 
 **References**: components-mapping.md, development-guide.md
 
 ### Task 1.4: Basic HTTP Request
-- [ ] Create useHttp hook with TanStack Query
-- [ ] Implement basic GET request mutation
-- [ ] Add Zod validation for requests/responses (URL, headers, status codes)
-- [ ] Add error handling with query error boundaries
-- [ ] Create simple response display component
+- [x] Create useHttp hook with TanStack Query
+- [x] Implement basic GET request mutation
+- [x] Add Zod validation for requests/responses (URL, headers, status codes)
+- [x] Add error handling with query error boundaries
+- [x] Create simple response display component
 
 **References**: state-management.md, development-guide.md, components-mapping.md
 
 ### Task 1.5: Send Button Integration
-- [ ] Add Send button to request editor
-- [ ] Connect button to HTTP request execution
-- [ ] Add loading state during request
-- [ ] Display basic response (status, body)
+- [x] Add Send button to request editor
+- [x] Connect button to HTTP request execution
+- [x] Add loading state during request
+- [x] Display basic response (status, body)
 
 **References**: components-mapping.md, state-management.md
 
