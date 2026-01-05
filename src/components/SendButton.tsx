@@ -8,18 +8,18 @@ interface SendButtonProps {
   className?: string
 }
 
-export function SendButton({ 
-  onClick, 
-  disabled = false, 
-  isLoading = false, 
-  className 
+export function SendButton({
+  onClick,
+  disabled = false,
+  isLoading = false,
+  className
 }: SendButtonProps) {
   return (
-    <Button 
+    <Button
       onClick={onClick}
       disabled={disabled || isLoading}
       className={cn(
-        "bg-green-600 hover:bg-green-700 text-white",
+        "bg-primary hover:bg-primary/90 text-primary-foreground font-bold",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         "transition-colors duration-200",
         className

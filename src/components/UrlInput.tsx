@@ -29,12 +29,12 @@ interface UrlInputProps {
 
 const httpMethods: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 
-export function UrlInput({ 
-  value, 
-  method, 
-  onUrlChange, 
-  onMethodChange, 
-  className 
+export function UrlInput({
+  value,
+  method,
+  onUrlChange,
+  onMethodChange,
+  className
 }: UrlInputProps) {
   const [urlError, setUrlError] = useState<string>('')
   const [touched, setTouched] = useState(false)
@@ -68,7 +68,7 @@ export function UrlInput({
   const getMethodColor = (method: HttpMethod) => {
     const colors = {
       GET: 'text-green-600 dark:text-green-400',
-      POST: 'text-blue-600 dark:text-blue-400', 
+      POST: 'text-blue-600 dark:text-blue-400',
       PUT: 'text-orange-600 dark:text-orange-400',
       PATCH: 'text-purple-600 dark:text-purple-400',
       DELETE: 'text-red-600 dark:text-red-400',
@@ -83,23 +83,26 @@ export function UrlInput({
       <Label htmlFor="url-input" className="sr-only">
         URL
       </Label>
-      
-      <div className="flex gap-2">
+
+      <div className={cn(
+        "flex items-center transition-colors",
+        "focus-within:ring-0"
+      )}>
         {/* HTTP Method Selector */}
         <Select value={method} onValueChange={(value) => value && onMethodChange(value)}>
           <SelectTrigger className={cn(
-            "w-24 font-semibold",
+            "w-[100px] font-bold border-0 bg-transparent focus:ring-0 shadow-none px-3",
             getMethodColor(method)
           )}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {httpMethods.map((method) => (
-              <SelectItem 
-                key={method} 
+              <SelectItem
+                key={method}
                 value={method}
                 className={cn(
-                  "font-semibold",
+                  "font-bold",
                   getMethodColor(method)
                 )}
               >
@@ -108,6 +111,9 @@ export function UrlInput({
             ))}
           </SelectContent>
         </Select>
+
+        {/* Divider */}
+        <div className="h-6 w-[1px] bg-border/50 mx-1" />
 
         {/* URL Input */}
         <div className="flex-1 relative">
@@ -119,14 +125,14 @@ export function UrlInput({
             onChange={(e) => handleUrlChange(e.target.value)}
             onBlur={handleUrlBlur}
             className={cn(
-              "font-mono text-sm",
-              urlError && "border-red-500 focus:border-red-500"
+              "font-mono text-sm border-0 bg-transparent shadow-none focus-visible:ring-0 px-3 h-8",
+              urlError && "text-destructive placeholder:text-destructive/50"
             )}
           />
-          
+
           {/* URL Error Message */}
           {urlError && touched && (
-            <div className="absolute -bottom-5 left-0 text-xs text-red-500">
+            <div className="absolute top-full left-0 mt-1 text-xs text-destructive font-medium">
               {urlError}
             </div>
           )}

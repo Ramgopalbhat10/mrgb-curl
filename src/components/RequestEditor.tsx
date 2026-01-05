@@ -62,11 +62,12 @@ export function RequestEditor({ className, onResponseReceived, onRequestStateCha
 
   return (
     <div className={cn(
-      "flex-1 bg-background lg:border-r border-border",
+      "flex-1 bg-background",
       "flex flex-col min-w-0",
       className
     )}>
-      <div className="flex items-center gap-3 border-b border-border p-2">
+      {/* URL Bar Row */}
+      <div className="flex items-center gap-3 px-4 py-3">
         <div className="flex-1 min-w-0">
           <UrlInput
             value={url}
@@ -75,49 +76,47 @@ export function RequestEditor({ className, onResponseReceived, onRequestStateCha
             onMethodChange={setMethod}
           />
         </div>
-        <SendButton 
+        <SendButton
           onClick={handleSendRequest}
           disabled={!url}
           isLoading={isLoading}
           className="shrink-0"
         />
       </div>
-      
-      <div className="flex-1 space-y-3 overflow-auto p-3">
-        {/* Request Configuration Tabs */}
-        <div className="flex items-center gap-4 border-b border-border pb-2 text-sm">
-          <button className="px-2 py-1 text-sm font-medium text-foreground border-b-2 border-primary">
-            Params
-          </button>
-          <button className="px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground">
-            Headers
-          </button>
-          <button className="px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground">
-            Body
-          </button>
-          <button className="px-2 py-1 text-sm font-medium text-muted-foreground hover:text-foreground">
-            Auth
-          </button>
-        </div>
-        
-        {/* Tab Content */}
-        <div className="text-sm text-muted-foreground">
-          Query parameters will be displayed here
-        </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="p-2 bg-destructive/10 border border-destructive/20 rounded-md">
-            <div className="text-xs text-destructive">
-              {error.message}
-            </div>
+      {/* Request Tabs Row */}
+      <div className="flex items-center gap-1 px-4 py-1 border-b border-border">
+        <button className="px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/50 rounded-sm">
+          Params
+        </button>
+        <button className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-sm">
+          Headers
+        </button>
+        <button className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-sm">
+          Auth
+        </button>
+        <button className="px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-sm">
+          Body
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="text-sm text-muted-foreground">
+        Query parameters will be displayed here
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+          <div className="text-xs text-destructive">
+            {error.message}
           </div>
-        )}
-
-        <div className="text-xs text-muted-foreground">
-          Send request <kbd className="ml-1 rounded border border-border bg-muted/50 px-1 py-0.5 text-[10px] font-mono">Ctrl</kbd>{' '}
-          + <kbd className="rounded border border-border bg-muted/50 px-1 py-0.5 text-[10px] font-mono">Enter</kbd>
         </div>
+      )}
+
+      <div className="text-xs text-muted-foreground">
+        Send request <kbd className="ml-1 rounded border border-border bg-muted/50 px-1 py-0.5 text-[10px] font-mono">Ctrl</kbd>{' '}
+        + <kbd className="rounded border border-border bg-muted/50 px-1 py-0.5 text-[10px] font-mono">Enter</kbd>
       </div>
     </div>
   )
