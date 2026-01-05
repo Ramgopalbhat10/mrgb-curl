@@ -1,13 +1,14 @@
+import { useMemo, useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { HttpResponse } from '@/schemas'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ResponseViewerProps {
   className?: string
   response?: HttpResponse | null
   isLoading?: boolean
   error?: string | null
+  style?: CSSProperties
 }
 
 function getStatusTextColor(status: number): string {
@@ -43,24 +44,56 @@ export function ResponseViewer({
   className, 
   response, 
   isLoading, 
-  error 
+  error,
+  style
 }: ResponseViewerProps) {
   const hasResponse = response && !isLoading && !error
+  const [activeTab, setActiveTab] = useState<'body' | 'headers'>('body')
+  const statusLabel = isLoading
+    ? 'Loading'
+    : error
+      ? 'Error'
+      : hasResponse && response
+        ? `${response.status}`
+        : 'Idle'
+  const statusTone = error
+    ? 'text-destructive'
+    : isLoading
+      ? 'text-muted-foreground'
+      : hasResponse && response
+        ? getStatusTextColor(response.status)
+        : 'text-muted-foreground'
+
+  const formattedBody = useMemo(() => {
+    if (!response) return ''
+    return formatJson(response.body)
+  }, [response])
+
+  const bodyLines = useMemo(() => {
+    if (!formattedBody) return ['']
+    return formattedBody.split('\n')
+  }, [formattedBody])
 
   return (
     <div className={cn(
-      "w-96 lg:w-[400px] bg-muted/10",
-      "flex flex-col",
+      "flex flex-col min-w-[280px] shrink-0 bg-muted/10",
       "hidden lg:flex",
       className
-    )}>
-      <div className="p-4 border-b border-border">
-        <div className="text-lg font-semibold text-foreground">
-          Response
-        </div>
+    )} style={style}>
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <div className="text-sm font-semibold text-foreground">Response</div>
+        <Badge
+          variant="secondary"
+          className={cn(
+            "text-xs font-mono",
+            statusTone
+          )}
+        >
+          {statusLabel}
+        </Badge>
       </div>
       
-      <div className="flex-1 p-4">
+      <div className="flex-1 space-y-3 overflow-auto p-3">
         {isLoading && (
           <div className="flex items-center justify-center h-full">
             <div className="text-sm text-muted-foreground">Loading response...</div>
@@ -68,84 +101,102 @@ export function ResponseViewer({
         )}
 
         {error && (
-          <Card className="border-destructive">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-destructive">Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm text-destructive">{error}</div>
-            </CardContent>
-          </Card>
+          <div className="p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+            <div className="text-xs text-destructive">{error}</div>
+          </div>
         )}
 
         {hasResponse && (
-          <div className="space-y-4">
-            {/* Status and Metadata */}
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={cn("font-mono", getStatusTextColor(response.status))}
-                  >
-                    {response.status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {response.statusText}
-                  </span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Time: {formatTime(response.responseTime)}</span>
-                  <span>Size: {formatBytes(response.size)}</span>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {response.timestamp.toLocaleTimeString()}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="font-mono">HTTP</span>
+              <Badge 
+                variant="secondary" 
+                className={cn("font-mono", getStatusTextColor(response.status))}
+              >
+                {response.status}
+              </Badge>
+              <span>{response.statusText}</span>
+            </div>
 
-            {/* Response Headers */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Headers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-32 overflow-auto">
-                  <div className="space-y-1">
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <span>Time: <span className="font-mono text-foreground">{formatTime(response.responseTime)}</span></span>
+              <span>Size: <span className="font-mono text-foreground">{formatBytes(response.size)}</span></span>
+              <span>At: <span className="font-mono text-foreground">{response.timestamp.toLocaleTimeString()}</span></span>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-border pb-2 text-sm">
+              <button
+                className={cn(
+                  "px-2 py-1 text-sm font-medium",
+                  activeTab === 'body'
+                    ? "text-foreground border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setActiveTab('body')}
+              >
+                Body
+              </button>
+              <button
+                className={cn(
+                  "px-2 py-1 text-sm font-medium",
+                  activeTab === 'headers'
+                    ? "text-foreground border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                onClick={() => setActiveTab('headers')}
+              >
+                Headers
+              </button>
+            </div>
+
+            {activeTab === 'headers' && (
+              <div className="h-64 overflow-auto rounded-md border border-border bg-background/60">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-background/80 text-muted-foreground">
+                    <tr>
+                      <th className="px-2 py-1 text-left font-medium">Header</th>
+                      <th className="px-2 py-1 text-left font-medium">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {response.headers.map((header, index) => (
-                      <div key={index} className="text-xs">
-                        <span className="font-medium text-muted-foreground">
-                          {header.key}:
-                        </span>{' '}
-                        <span className="font-mono">{header.value}</span>
+                      <tr key={index} className="border-t border-border/60">
+                        <td className="px-2 py-1 text-muted-foreground">{header.key}</td>
+                        <td className="px-2 py-1 font-mono text-foreground">{header.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {activeTab === 'body' && (
+              <div className="h-64 overflow-auto rounded-md border border-border bg-background/60">
+                <div className="grid grid-cols-[auto_1fr] text-xs font-mono">
+                  <div className="select-none border-r border-border/60 bg-muted/30 px-2 py-2 text-right text-muted-foreground">
+                    {bodyLines.map((_, index) => (
+                      <div key={index} className="leading-5">
+                        {index + 1}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="px-2 py-2 text-foreground">
+                    {bodyLines.map((line, index) => (
+                      <div key={index} className="leading-5 whitespace-pre">
+                        {line || ' '}
                       </div>
                     ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Response Body */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Body</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 overflow-auto">
-                  <pre className="text-xs font-mono whitespace-pre-wrap wrap-break-word">
-                    {formatJson(response.body)}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </div>
         )}
 
         {!hasResponse && !isLoading && !error && (
           <div className="flex items-center justify-center h-full">
-            <div className="text-sm text-muted-foreground text-center">
+            <div className="text-sm text-muted-foreground">
               Send a request to see the response here
             </div>
           </div>

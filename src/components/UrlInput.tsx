@@ -79,8 +79,8 @@ export function UrlInput({
   }
 
   return (
-    <div className={cn("space-y-2", className)}>
-      <Label htmlFor="url-input" className="text-sm font-medium">
+    <div className={cn("space-y-0", className)}>
+      <Label htmlFor="url-input" className="sr-only">
         URL
       </Label>
       
@@ -88,7 +88,7 @@ export function UrlInput({
         {/* HTTP Method Selector */}
         <Select value={method} onValueChange={(value) => value && onMethodChange(value)}>
           <SelectTrigger className={cn(
-            "w-32 font-semibold",
+            "w-24 font-semibold",
             getMethodColor(method)
           )}>
             <SelectValue />
@@ -132,13 +132,6 @@ export function UrlInput({
           )}
         </div>
       </div>
-      
-      {/* URL Validation Hint */}
-      {!value && !touched && (
-        <div className="text-xs text-muted-foreground">
-          Enter a complete URL including protocol (http:// or https://)
-        </div>
-      )}
     </div>
   )
 }
