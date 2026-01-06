@@ -1,41 +1,177 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './Sidebar'
 import { RequestPanel } from './RequestPanel'
 import { ResponseViewer } from './ResponseViewer'
 import { UrlBar } from './UrlBar'
-import { HttpResponse, HttpMethod } from '@/schemas'
+import { TabBar } from './TabBar'
+import { ThemeToggle } from './ThemeToggle'
+import { KeyboardShortcutsModal, useKeyboardShortcuts } from './KeyboardShortcutsModal'
+import { HttpResponse, HttpMethod, Header, QueryParam, RequestBody } from '@/schemas'
 import { QueryErrorBoundary } from './QueryErrorBoundary'
 import { useHttp } from '@/hooks/useHttp'
+import { useRequestTabsStore } from '@/stores/requestTabsStore'
+import { useCollectionsStore } from '@/stores/collectionsStore'
+import { AuthConfig } from './AuthEditor'
+import { Keyboard } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface AppShellProps {
   className?: string
 }
 
 export function AppShell({ className }: AppShellProps) {
-  const [url, setUrl] = useState('')
-  const [method, setMethod] = useState<HttpMethod>('GET')
   const [currentResponse, setCurrentResponse] = useState<HttpResponse | null>(null)
-  const [responseWidth, setResponseWidth] = useState(420)
+  const [sidebarWidth, setSidebarWidth] = useState(256)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  // Start with 50% for response panel
+  const [responseWidthPercent, setResponseWidthPercent] = useState(50)
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const isDraggingRef = useRef(false)
+  const isDraggingResponseRef = useRef(false)
+  const isDraggingSidebarRef = useRef(false)
 
+  // Tab store
+  const { tabs, activeTabId, updateTab, getActiveTab, setActiveTab, addTab, removeTab } = useRequestTabsStore()
+
+  // Collections store for history
+  const { addToHistory } = useCollectionsStore()
+
+  // Initialize active tab if none
+  useEffect(() => {
+    if (!activeTabId && tabs.length > 0) {
+      setActiveTab(tabs[0].id)
+    }
+  }, [activeTabId, tabs, setActiveTab])
+
+  const activeTab = getActiveTab()
+
+  // HTTP hook
   const { sendRequest, isLoading, error, data } = useHttp()
 
-  const handleSendRequest = async () => {
-    if (!url) return
+  // State handlers for active tab
+  const handleUrlChange = (url: string) => {
+    if (activeTab) {
+      // Only auto-rename if the tab has a default name or is unnamed
+      const isDefaultName = !activeTab.name ||
+        activeTab.name === 'New Request' ||
+        activeTab.name === 'Untitled' ||
+        activeTab.name === activeTab.url // Name was set from URL previously
+
+      if (isDefaultName) {
+        let tabName = url || 'Untitled'
+        try {
+          const urlObj = new URL(url)
+          tabName = urlObj.hostname || url
+        } catch { }
+        updateTab(activeTab.id, { url, name: tabName })
+      } else {
+        // Preserve the existing name, only update URL
+        updateTab(activeTab.id, { url })
+      }
+    }
+  }
+
+  const handleMethodChange = (method: HttpMethod) => {
+    if (activeTab) {
+      updateTab(activeTab.id, { method })
+    }
+  }
+
+  const handleHeadersChange = (headers: Header[]) => {
+    if (activeTab) {
+      updateTab(activeTab.id, { headers })
+    }
+  }
+
+  const handleParamsChange = (params: QueryParam[]) => {
+    if (activeTab) {
+      updateTab(activeTab.id, { params })
+    }
+  }
+
+  const handleBodyChange = (body: RequestBody | null) => {
+    if (activeTab) {
+      updateTab(activeTab.id, { body })
+    }
+  }
+
+  const handleAuthChange = (auth: AuthConfig) => {
+    if (activeTab) {
+      updateTab(activeTab.id, { auth })
+    }
+  }
+
+  const handleSendRequest = useCallback(async () => {
+    if (!activeTab?.url) return
+
+    // Build headers including auth
+    let headers = [...(activeTab.headers || [])]
+
+    // Add auth headers
+    if (activeTab.auth?.type === 'bearer' && activeTab.auth.bearer?.token) {
+      headers.push({ key: 'Authorization', value: `Bearer ${activeTab.auth.bearer.token}` })
+    } else if (activeTab.auth?.type === 'basic' && activeTab.auth.basic) {
+      const { username, password } = activeTab.auth.basic
+      const encoded = btoa(`${username}:${password}`)
+      headers.push({ key: 'Authorization', value: `Basic ${encoded}` })
+    } else if (activeTab.auth?.type === 'api-key' && activeTab.auth.apiKey?.addTo === 'header') {
+      headers.push({ key: activeTab.auth.apiKey.key, value: activeTab.auth.apiKey.value })
+    }
+
+    // Build URL with params
+    let url = activeTab.url
+    if (activeTab.params?.length) {
+      try {
+        const urlObj = new URL(activeTab.url)
+        activeTab.params.filter(p => p.enabled && p.key).forEach(p => {
+          urlObj.searchParams.set(p.key, p.value)
+        })
+        url = urlObj.toString()
+      } catch {
+        // Invalid URL, use as-is
+      }
+    }
 
     try {
-      await sendRequest.mutateAsync({
-        method,
+      const response = await sendRequest.mutateAsync({
+        method: activeTab.method,
         url,
-        headers: {},
-        body: method !== 'GET' ? '{}' : undefined,
+        headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
+        body: activeTab.body?.content,
       })
+
+      // Add to history on success
+      if (response) {
+        try {
+          // Get hostname for the request name
+          let requestName = activeTab.name || 'Request'
+          try {
+            requestName = new URL(activeTab.url).pathname || activeTab.url
+          } catch { }
+
+          addToHistory({
+            requestId: activeTab.id,
+            request: {
+              id: activeTab.id,
+              name: requestName,
+              method: activeTab.method,
+              url: activeTab.url,
+              headers: activeTab.headers || [],
+              params: activeTab.params || [],
+              body: activeTab.body || undefined,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            response: response,
+          })
+        } catch (historyError) {
+          console.error('Failed to add to history:', historyError)
+        }
+      }
     } catch (err) {
       // Error is handled by the hook
     }
-  }
+  }, [activeTab, sendRequest, addToHistory])
 
   // Update response when data changes
   useEffect(() => {
@@ -44,37 +180,90 @@ export function AppShell({ className }: AppShellProps) {
     }
   }, [data])
 
-  // Keyboard shortcut support (Ctrl+Enter)
+  // Clear response when active tab changes
+  useEffect(() => {
+    setCurrentResponse(null)
+  }, [activeTabId])
+
+  // Keyboard shortcuts
+  const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts()
+
+  // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl+Enter to send request
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
         event.preventDefault()
         handleSendRequest()
+      }
+      // Ctrl+T to new tab
+      if ((event.ctrlKey || event.metaKey) && event.key === 't') {
+        event.preventDefault()
+        addTab()
+      }
+      // Ctrl+W to close tab
+      if ((event.ctrlKey || event.metaKey) && event.key === 'w') {
+        event.preventDefault()
+        if (activeTab) {
+          removeTab(activeTab.id)
+        }
+      }
+      // Ctrl+S to save request (prevent browser default)
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault()
+        // Mark as saved (clear dirty flag)
+        if (activeTab) {
+          updateTab(activeTab.id, { isDirty: false })
+        }
+      }
+      // Ctrl+L to focus URL input
+      if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
+        event.preventDefault()
+        const urlInput = document.querySelector('input[placeholder*="URL"]') as HTMLInputElement
+        if (urlInput) urlInput.focus()
+      }
+      // Ctrl+B to toggle sidebar
+      if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
+        event.preventDefault()
+        setSidebarCollapsed(prev => !prev)
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [url, method])
+  }, [activeTab, addTab, removeTab, handleSendRequest, updateTab])
 
-  // Drag to resize
+  // Drag to resize panels
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
-      if (!isDraggingRef.current || !containerRef.current) return
+      if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()
-      const minResponse = 320
-      const minRequest = 320
-      const maxResponse = Math.max(minResponse, rect.width - minRequest)
-      const next = rect.right - event.clientX
-      const clamped = Math.min(Math.max(next, minResponse), maxResponse)
-      setResponseWidth(clamped)
+
+      // Response resizing (percentage based)
+      if (isDraggingResponseRef.current) {
+        const availableWidth = rect.width - (sidebarCollapsed ? 40 : sidebarWidth)
+        const responseWidth = rect.right - event.clientX
+        const percent = (responseWidth / availableWidth) * 100
+        const clamped = Math.min(Math.max(percent, 20), 80) // 20-80% range
+        setResponseWidthPercent(clamped)
+      }
+
+      // Sidebar resizing
+      if (isDraggingSidebarRef.current) {
+        const minSidebar = 200
+        const maxSidebar = 400
+        const clamped = Math.min(Math.max(event.clientX, minSidebar), maxSidebar)
+        setSidebarWidth(clamped)
+      }
     }
 
     const handlePointerUp = () => {
-      if (!isDraggingRef.current) return
-      isDraggingRef.current = false
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
+      if (isDraggingResponseRef.current || isDraggingSidebarRef.current) {
+        isDraggingResponseRef.current = false
+        isDraggingSidebarRef.current = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+      }
     }
 
     window.addEventListener('pointermove', handlePointerMove)
@@ -83,37 +272,88 @@ export function AppShell({ className }: AppShellProps) {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerUp)
     }
-  }, [])
+  }, [sidebarWidth, sidebarCollapsed])
 
   return (
-    <div className={cn(
+    <div ref={containerRef} className={cn(
       "h-screen w-screen bg-background overflow-hidden",
       "flex",
       className
     )}>
       {/* Sidebar - Collections and History */}
-      <Sidebar className="hidden lg:flex border-r border-sidebar-border/50 bg-sidebar" />
+      <div className="hidden lg:flex">
+        <Sidebar
+          className="border-r border-sidebar-border/50"
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(prev => !prev)}
+          width={sidebarWidth}
+        />
+
+        {/* Sidebar Resize Handle */}
+        {!sidebarCollapsed && (
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="w-[3px] cursor-col-resize bg-border/20 hover:bg-primary/50 transition-colors"
+            onPointerDown={(event) => {
+              event.preventDefault()
+              isDraggingSidebarRef.current = true
+              document.body.style.cursor = 'col-resize'
+              document.body.style.userSelect = 'none'
+            }}
+          />
+        )}
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Tab Bar with Header Actions */}
+        <div className="flex items-center border-b border-border bg-muted/30">
+          <TabBar className="flex-1" />
+          {/* Header Action Icons - aligned with tabs */}
+          <div className="flex items-center gap-1 px-2 py-1.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowShortcuts(true)}
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              title="Keyboard shortcuts (Ctrl+/)"
+            >
+              <Keyboard className="h-4 w-4" />
+            </Button>
+            <ThemeToggle />
+          </div>
+        </div>
+
         {/* Full-width URL Bar at Top */}
         <UrlBar
-          url={url}
-          method={method}
-          onUrlChange={setUrl}
-          onMethodChange={setMethod}
+          url={activeTab?.url || ''}
+          method={activeTab?.method || 'GET'}
+          onUrlChange={handleUrlChange}
+          onMethodChange={handleMethodChange}
           onSend={handleSendRequest}
           isLoading={isLoading}
         />
 
         {/* Two-column layout: Request Panel + Response Viewer */}
-        <div ref={containerRef} className="flex-1 flex min-h-0">
+        <div className="flex-1 flex min-h-0">
           {/* Request Panel - Left Column */}
           <QueryErrorBoundary>
             <RequestPanel
-              method={method}
+              url={activeTab?.url || ''}
+              method={activeTab?.method || 'GET'}
+              headers={activeTab?.headers || []}
+              params={activeTab?.params || []}
+              body={activeTab?.body || null}
+              auth={activeTab?.auth || { type: 'none' }}
+              onUrlChange={handleUrlChange}
+              onHeadersChange={handleHeadersChange}
+              onParamsChange={handleParamsChange}
+              onBodyChange={handleBodyChange}
+              onAuthChange={handleAuthChange}
               error={error?.message || null}
-              className="flex-1 min-w-0"
+              className="min-w-0"
+              style={{ flex: `1 1 ${100 - responseWidthPercent}%` }}
             />
           </QueryErrorBoundary>
 
@@ -121,10 +361,10 @@ export function AppShell({ className }: AppShellProps) {
           <div
             role="separator"
             aria-orientation="vertical"
-            className="hidden lg:flex w-[3px] cursor-col-resize bg-border/30 hover:bg-primary/50 transition-colors"
+            className="hidden lg:flex w-[3px] cursor-col-resize bg-border/30 hover:bg-primary/50 transition-colors shrink-0"
             onPointerDown={(event) => {
               event.preventDefault()
-              isDraggingRef.current = true
+              isDraggingResponseRef.current = true
               document.body.style.cursor = 'col-resize'
               document.body.style.userSelect = 'none'
             }}
@@ -135,12 +375,21 @@ export function AppShell({ className }: AppShellProps) {
             response={currentResponse}
             isLoading={isLoading}
             error={error?.message || null}
-            method={method}
-            style={{ width: responseWidth }}
+            method={activeTab?.method || 'GET'}
+            requestHeaders={activeTab?.headers || []}
+            requestBody={activeTab?.body?.content || ''}
+            requestUrl={activeTab?.url || ''}
             className="hidden lg:flex"
+            style={{ flex: `1 1 ${responseWidthPercent}%` }}
           />
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   )
 }
