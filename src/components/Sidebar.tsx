@@ -203,7 +203,7 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
           variant="ghost"
           size="sm"
           onClick={onToggle}
-          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-secondary"
           title="Expand sidebar"
         >
           <PanelLeftOpen className="h-4 w-4" />

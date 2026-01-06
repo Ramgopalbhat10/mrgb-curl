@@ -12,9 +12,16 @@ import { QueryErrorBoundary } from './QueryErrorBoundary'
 import { useHttp } from '@/hooks/useHttp'
 import { useRequestTabsStore } from '@/stores/requestTabsStore'
 import { useCollectionsStore } from '@/stores/collectionsStore'
+import { useSettingsStore } from '@/stores/settingsStore'
 import { AuthConfig } from './AuthEditor'
-import { Keyboard } from 'lucide-react'
+import { Keyboard, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface AppShellProps {
   className?: string
@@ -35,6 +42,9 @@ export function AppShell({ className }: AppShellProps) {
 
   // Collections store for history
   const { addToHistory } = useCollectionsStore()
+
+  // Settings store for proxy mode
+  const { proxyMode, setProxyMode } = useSettingsStore()
 
   // Initialize active tab if none
   useEffect(() => {
@@ -312,6 +322,24 @@ export function AppShell({ className }: AppShellProps) {
           <TabBar className="flex-1" />
           {/* Header Action Icons - aligned with tabs */}
           <div className="flex items-center gap-1 px-2 py-1.5 shrink-0">
+            {/* Settings Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex items-center justify-center h-7 w-7 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuCheckboxItem
+                  checked={proxyMode}
+                  onClick={() => setProxyMode(!proxyMode)}
+                  className="text-xs cursor-pointer"
+                >
+                  Proxy Mode
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="sm"

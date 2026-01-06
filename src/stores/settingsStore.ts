@@ -8,12 +8,14 @@ interface SettingsState {
     autoSave: boolean
     followRedirects: boolean
     validateSSL: boolean
+    proxyMode: boolean
 
     // Actions
     setTheme: (theme: Theme) => void
     setAutoSave: (autoSave: boolean) => void
     setFollowRedirects: (followRedirects: boolean) => void
     setValidateSSL: (validateSSL: boolean) => void
+    setProxyMode: (proxyMode: boolean) => void
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -23,6 +25,7 @@ export const useSettingsStore = create<SettingsState>()(
             autoSave: true,
             followRedirects: true,
             validateSSL: true,
+            proxyMode: true,
 
             setTheme: (theme: Theme) => {
                 set({ theme })
@@ -37,6 +40,7 @@ export const useSettingsStore = create<SettingsState>()(
             setAutoSave: (autoSave: boolean) => set({ autoSave }),
             setFollowRedirects: (followRedirects: boolean) => set({ followRedirects }),
             setValidateSSL: (validateSSL: boolean) => set({ validateSSL }),
+            setProxyMode: (proxyMode: boolean) => set({ proxyMode }),
         }),
         {
             name: 'mrgb-curl-settings',

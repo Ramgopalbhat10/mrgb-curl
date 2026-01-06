@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { HttpResponse } from '@/schemas'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // HTTP method type
 const httpMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const
@@ -15,7 +16,7 @@ const RequestExecutionSchema = z.object({
 })
 
 // HTTP request execution function using server proxy API route
-async function executeHttpRequest(request: z.infer<typeof RequestExecutionSchema>): Promise<HttpResponse> {
+async function executeProxyRequest(request: z.infer<typeof RequestExecutionSchema>): Promise<HttpResponse> {
   // Validate request before execution
   const validatedRequest = RequestExecutionSchema.parse(request)
 
@@ -48,12 +49,65 @@ async function executeHttpRequest(request: z.infer<typeof RequestExecutionSchema
   return httpResponse
 }
 
+// HTTP request execution function directly in the browser (no proxy)
+async function executeDirectRequest(request: z.infer<typeof RequestExecutionSchema>): Promise<HttpResponse> {
+  const validatedRequest = RequestExecutionSchema.parse(request)
+  const startTime = performance.now()
+
+  // Prepare fetch options
+  const fetchOptions: RequestInit = {
+    method: validatedRequest.method,
+    headers: validatedRequest.headers,
+  }
+
+  // Add body for methods that support it
+  if (validatedRequest.body && ['POST', 'PUT', 'PATCH'].includes(validatedRequest.method)) {
+    fetchOptions.body = validatedRequest.body
+  }
+
+  try {
+    const response = await fetch(validatedRequest.url, fetchOptions)
+    const endTime = performance.now()
+
+    // Collect response headers (browser may restrict some headers due to CORS)
+    const responseHeaders: Record<string, string> = {}
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value
+    })
+
+    // Get response body
+    const responseBody = await response.text()
+
+    // Calculate response size
+    const responseSize = new TextEncoder().encode(responseBody).length
+
+    const httpResponse: HttpResponse = {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.entries(responseHeaders).map(([key, value]) => ({ key, value })),
+      body: responseBody,
+      responseTime: Math.round(endTime - startTime),
+      size: responseSize,
+      timestamp: new Date(),
+    }
+
+    return httpResponse
+  } catch (error) {
+    // Handle network errors (CORS, network failure, etc.)
+    throw new Error(error instanceof Error ? error.message : 'Network request failed')
+  }
+}
+
 // HTTP hook for making requests
 export function useHttp() {
   const queryClient = useQueryClient()
+  const proxyMode = useSettingsStore((state) => state.proxyMode)
 
   const sendRequest = useMutation({
-    mutationFn: executeHttpRequest,
+    mutationFn: (request: z.infer<typeof RequestExecutionSchema>) => {
+      // Use proxy or direct based on settings
+      return proxyMode ? executeProxyRequest(request) : executeDirectRequest(request)
+    },
     onSuccess: (response, variables) => {
       // Cache the response
       queryClient.setQueryData(['response', variables.url, variables.method], response)
