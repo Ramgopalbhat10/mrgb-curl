@@ -6,8 +6,17 @@ import { ResponseViewer } from './ResponseViewer'
 import { UrlBar } from './UrlBar'
 import { TabBar } from './TabBar'
 import { ThemeToggle } from './ThemeToggle'
-import { KeyboardShortcutsModal, useKeyboardShortcuts } from './KeyboardShortcutsModal'
-import { HttpResponse, HttpMethod, Header, QueryParam, RequestBody } from '@/schemas'
+import {
+  KeyboardShortcutsModal,
+  useKeyboardShortcuts,
+} from './KeyboardShortcutsModal'
+import {
+  HttpResponse,
+  HttpMethod,
+  Header,
+  QueryParam,
+  RequestBody,
+} from '@/schemas'
 import { QueryErrorBoundary } from './QueryErrorBoundary'
 import { useHttp } from '@/hooks/useHttp'
 import { useRequestTabsStore } from '@/stores/requestTabsStore'
@@ -28,7 +37,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ className }: AppShellProps) {
-  const [currentResponse, setCurrentResponse] = useState<HttpResponse | null>(null)
+  const [currentResponse, setCurrentResponse] = useState<HttpResponse | null>(
+    null,
+  )
   const [sidebarWidth, setSidebarWidth] = useState(256)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   // Start with 50% for response panel
@@ -38,10 +49,18 @@ export function AppShell({ className }: AppShellProps) {
   const isDraggingSidebarRef = useRef(false)
 
   // Tab store
-  const { tabs, activeTabId, updateTab, getActiveTab, setActiveTab, addTab, removeTab } = useRequestTabsStore()
+  const {
+    tabs,
+    activeTabId,
+    updateTab,
+    getActiveTab,
+    setActiveTab,
+    addTab,
+    removeTab,
+  } = useRequestTabsStore()
 
   // Collections store for history
-  const { addToHistory } = useCollectionsStore()
+  const { addToHistory, updateRequest } = useCollectionsStore()
 
   // Settings store for proxy mode
   const { proxyMode, setProxyMode } = useSettingsStore()
@@ -59,10 +78,20 @@ export function AppShell({ className }: AppShellProps) {
   const { sendRequest, isLoading, error, data } = useHttp()
 
   // State handlers for active tab
+  const getCollectionRequestId = (collectionRequestId?: string | null) => {
+    if (!collectionRequestId) return null
+    const parts = collectionRequestId.split(':')
+    if (parts.length < 2) return null
+    return parts[1]
+  }
+
   const handleUrlChange = (url: string) => {
     if (activeTab) {
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      const requestId = getCollectionRequestId(activeTab.collectionRequestId)
       // Only auto-rename if the tab has a default name or is unnamed
-      const isDefaultName = !activeTab.name ||
+      const isDefaultName =
+        !activeTab.name ||
         activeTab.name === 'New Request' ||
         activeTab.name === 'Untitled' ||
         activeTab.name === activeTab.url // Name was set from URL previously
@@ -72,42 +101,69 @@ export function AppShell({ className }: AppShellProps) {
         try {
           const urlObj = new URL(url)
           tabName = urlObj.hostname || url
-        } catch { }
-        updateTab(activeTab.id, { url, name: tabName })
+        } catch {}
+        updateTab(activeTab.id, { url, name: tabName }, shouldMarkDirty)
+        if (requestId) {
+          updateRequest(requestId, { url, name: tabName })
+        }
       } else {
         // Preserve the existing name, only update URL
-        updateTab(activeTab.id, { url })
+        updateTab(activeTab.id, { url }, shouldMarkDirty)
+        if (requestId) {
+          updateRequest(requestId, { url })
+        }
       }
     }
   }
 
   const handleMethodChange = (method: HttpMethod) => {
     if (activeTab) {
-      updateTab(activeTab.id, { method })
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      updateTab(activeTab.id, { method }, shouldMarkDirty)
+      const requestId = getCollectionRequestId(activeTab.collectionRequestId)
+      if (requestId) {
+        updateRequest(requestId, { method })
+      }
     }
   }
 
   const handleHeadersChange = (headers: Header[]) => {
     if (activeTab) {
-      updateTab(activeTab.id, { headers })
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      updateTab(activeTab.id, { headers }, shouldMarkDirty)
+      const requestId = getCollectionRequestId(activeTab.collectionRequestId)
+      if (requestId) {
+        updateRequest(requestId, { headers })
+      }
     }
   }
 
   const handleParamsChange = (params: QueryParam[]) => {
     if (activeTab) {
-      updateTab(activeTab.id, { params })
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      updateTab(activeTab.id, { params }, shouldMarkDirty)
+      const requestId = getCollectionRequestId(activeTab.collectionRequestId)
+      if (requestId) {
+        updateRequest(requestId, { params })
+      }
     }
   }
 
   const handleBodyChange = (body: RequestBody | null) => {
     if (activeTab) {
-      updateTab(activeTab.id, { body })
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      updateTab(activeTab.id, { body }, shouldMarkDirty)
+      const requestId = getCollectionRequestId(activeTab.collectionRequestId)
+      if (requestId) {
+        updateRequest(requestId, { body: body || undefined })
+      }
     }
   }
 
   const handleAuthChange = (auth: AuthConfig) => {
     if (activeTab) {
-      updateTab(activeTab.id, { auth })
+      const shouldMarkDirty = !activeTab.collectionRequestId
+      updateTab(activeTab.id, { auth }, shouldMarkDirty)
     }
   }
 
@@ -119,13 +175,22 @@ export function AppShell({ className }: AppShellProps) {
 
     // Add auth headers
     if (activeTab.auth?.type === 'bearer' && activeTab.auth.bearer?.token) {
-      headers.push({ key: 'Authorization', value: `Bearer ${activeTab.auth.bearer.token}` })
+      headers.push({
+        key: 'Authorization',
+        value: `Bearer ${activeTab.auth.bearer.token}`,
+      })
     } else if (activeTab.auth?.type === 'basic' && activeTab.auth.basic) {
       const { username, password } = activeTab.auth.basic
       const encoded = btoa(`${username}:${password}`)
       headers.push({ key: 'Authorization', value: `Basic ${encoded}` })
-    } else if (activeTab.auth?.type === 'api-key' && activeTab.auth.apiKey?.addTo === 'header') {
-      headers.push({ key: activeTab.auth.apiKey.key, value: activeTab.auth.apiKey.value })
+    } else if (
+      activeTab.auth?.type === 'api-key' &&
+      activeTab.auth.apiKey?.addTo === 'header'
+    ) {
+      headers.push({
+        key: activeTab.auth.apiKey.key,
+        value: activeTab.auth.apiKey.value,
+      })
     }
 
     // Build URL with params
@@ -133,9 +198,11 @@ export function AppShell({ className }: AppShellProps) {
     if (activeTab.params?.length) {
       try {
         const urlObj = new URL(activeTab.url)
-        activeTab.params.filter(p => p.enabled && p.key).forEach(p => {
-          urlObj.searchParams.set(p.key, p.value)
-        })
+        activeTab.params
+          .filter((p) => p.enabled && p.key)
+          .forEach((p) => {
+            urlObj.searchParams.set(p.key, p.value)
+          })
         url = urlObj.toString()
       } catch {
         // Invalid URL, use as-is
@@ -146,7 +213,7 @@ export function AppShell({ className }: AppShellProps) {
       const response = await sendRequest.mutateAsync({
         method: activeTab.method,
         url,
-        headers: Object.fromEntries(headers.map(h => [h.key, h.value])),
+        headers: Object.fromEntries(headers.map((h) => [h.key, h.value])),
         body: activeTab.body?.content,
       })
 
@@ -157,7 +224,7 @@ export function AppShell({ className }: AppShellProps) {
           let requestName = activeTab.name || 'Request'
           try {
             requestName = new URL(activeTab.url).pathname || activeTab.url
-          } catch { }
+          } catch {}
 
           addToHistory({
             requestId: activeTab.id,
@@ -229,13 +296,15 @@ export function AppShell({ className }: AppShellProps) {
       // Ctrl+L to focus URL input
       if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
         event.preventDefault()
-        const urlInput = document.querySelector('input[placeholder*="URL"]') as HTMLInputElement
+        const urlInput = document.querySelector(
+          'input[placeholder*="URL"]',
+        ) as HTMLInputElement
         if (urlInput) urlInput.focus()
       }
       // Ctrl+B to toggle sidebar
       if ((event.ctrlKey || event.metaKey) && event.key === 'b') {
         event.preventDefault()
-        setSidebarCollapsed(prev => !prev)
+        setSidebarCollapsed((prev) => !prev)
       }
     }
 
@@ -251,7 +320,8 @@ export function AppShell({ className }: AppShellProps) {
 
       // Response resizing (percentage based)
       if (isDraggingResponseRef.current) {
-        const availableWidth = rect.width - (sidebarCollapsed ? 40 : sidebarWidth)
+        const availableWidth =
+          rect.width - (sidebarCollapsed ? 40 : sidebarWidth)
         const responseWidth = rect.right - event.clientX
         const percent = (responseWidth / availableWidth) * 100
         const clamped = Math.min(Math.max(percent, 20), 80) // 20-80% range
@@ -262,7 +332,10 @@ export function AppShell({ className }: AppShellProps) {
       if (isDraggingSidebarRef.current) {
         const minSidebar = 200
         const maxSidebar = 400
-        const clamped = Math.min(Math.max(event.clientX, minSidebar), maxSidebar)
+        const clamped = Math.min(
+          Math.max(event.clientX, minSidebar),
+          maxSidebar,
+        )
         setSidebarWidth(clamped)
       }
     }
@@ -285,17 +358,20 @@ export function AppShell({ className }: AppShellProps) {
   }, [sidebarWidth, sidebarCollapsed])
 
   return (
-    <div ref={containerRef} className={cn(
-      "h-screen w-screen bg-background overflow-hidden",
-      "flex",
-      className
-    )}>
+    <div
+      ref={containerRef}
+      className={cn(
+        'h-screen w-screen bg-background overflow-hidden',
+        'flex',
+        className,
+      )}
+    >
       {/* Sidebar - Collections and History */}
       <div className="hidden lg:flex">
         <Sidebar
           className="border-r border-sidebar-border/50"
           isCollapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(prev => !prev)}
+          onToggle={() => setSidebarCollapsed((prev) => !prev)}
           width={sidebarWidth}
         />
 
@@ -304,7 +380,7 @@ export function AppShell({ className }: AppShellProps) {
           <div
             role="separator"
             aria-orientation="vertical"
-            className="w-[3px] cursor-col-resize bg-border/20 hover:bg-primary/50 transition-colors"
+            className="w-0.75 cursor-col-resize bg-border/20 hover:bg-primary/50 transition-colors"
             onPointerDown={(event) => {
               event.preventDefault()
               isDraggingSidebarRef.current = true
@@ -389,7 +465,7 @@ export function AppShell({ className }: AppShellProps) {
           <div
             role="separator"
             aria-orientation="vertical"
-            className="hidden lg:flex w-[3px] cursor-col-resize bg-border/30 hover:bg-primary/50 transition-colors shrink-0"
+            className="hidden lg:flex w-0.75 cursor-col-resize bg-border/30 hover:bg-primary/50 transition-colors shrink-0"
             onPointerDown={(event) => {
               event.preventDefault()
               isDraggingResponseRef.current = true

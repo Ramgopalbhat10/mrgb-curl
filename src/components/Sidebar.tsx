@@ -41,24 +41,53 @@ interface SidebarProps {
   width?: number
 }
 
-export function Sidebar({ className, isCollapsed = false, onToggle, width }: SidebarProps) {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+export function Sidebar({
+  className,
+  isCollapsed = false,
+  onToggle,
+  width,
+}: SidebarProps) {
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
     collections: true,
     drafts: true,
     history: true,
   })
-  const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>({})
+  const [expandedCollections, setExpandedCollections] = useState<
+    Record<string, boolean>
+  >({})
   const [newCollectionName, setNewCollectionName] = useState('')
   const [isAddingCollection, setIsAddingCollection] = useState(false)
-  const [addingRequestToCollection, setAddingRequestToCollection] = useState<string | null>(null)
+  const [addingRequestToCollection, setAddingRequestToCollection] = useState<
+    string | null
+  >(null)
   const [newRequestName, setNewRequestName] = useState('')
   const [historySearch, setHistorySearch] = useState('')
 
-  const { collections, history, addCollection, deleteCollection, saveRequest, searchHistory, clearHistory, getRequest, deleteRequest } = useCollectionsStore()
-  const { tabs, addTab, updateTab, setActiveTab, removeTab, renameTab, activeTabId } = useRequestTabsStore()
+  const {
+    collections,
+    history,
+    addCollection,
+    deleteCollection,
+    saveRequest,
+    searchHistory,
+    clearHistory,
+    getRequest,
+    deleteRequest,
+  } = useCollectionsStore()
+  const {
+    tabs,
+    addTab,
+    updateTab,
+    setActiveTab,
+    removeTab,
+    renameTab,
+    activeTabId,
+  } = useRequestTabsStore()
 
   // Get active tab's collectionRequestId for highlighting
-  const activeTab = tabs.find(t => t.id === activeTabId)
+  const activeTab = tabs.find((t) => t.id === activeTabId)
   const activeCollectionRequestId = activeTab?.collectionRequestId
 
   const toggleSection = (section: string) => {
@@ -96,15 +125,37 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
     addTab()
     const newTabId = useRequestTabsStore.getState().tabs.at(-1)?.id
     if (newTabId) {
-      updateTab(newTabId, { name: 'Untitled' })
+      updateTab(newTabId, { name: 'Untitled' }, false)
       setActiveTab(newTabId)
     }
   }
 
-  const drafts = tabs.filter((t) => t.isDirty)
-  const filteredHistory = historySearch ? searchHistory(historySearch) : history.slice(0, 20)
+  const buildHistoryKey = (request: any) => {
+    const serializedParams = (request.params || [])
+      .filter((param: any) => param.enabled !== false && param.key)
+      .map((param: any) => `${param.key}=${param.value ?? ''}`)
+      .sort()
+      .join('&')
+
+    return `${request.url}::${serializedParams}`
+  }
+
+  const drafts = tabs.filter((t) => t.isDirty && !t.collectionRequestId)
+  const filteredHistory = historySearch
+    ? searchHistory(historySearch)
+    : history.slice(0, 20)
 
   const handleHistoryItemClick = (item: any) => {
+    const targetKey = buildHistoryKey(item.request)
+    const existingTab = tabs.find(
+      (tab) => !tab.collectionRequestId && buildHistoryKey(tab) === targetKey,
+    )
+
+    if (existingTab) {
+      setActiveTab(existingTab.id)
+      return
+    }
+
     addTab()
     const newTabId = useRequestTabsStore.getState().tabs.at(-1)?.id
     if (newTabId) {
@@ -151,8 +202,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
     }
   }
 
-  const handleMoveToCollection = (request: any, collectionId: string) => {
-    saveRequest(collectionId, {
+  const handleMoveToCollection = (
+    request: any,
+    collectionId: string,
+    sourceTabId?: string,
+  ) => {
+    const requestId = saveRequest(collectionId, {
       name: request.name || request.url || 'Moved Request',
       method: request.method,
       url: request.url,
@@ -160,12 +215,22 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
       params: request.params || [],
       body: request.body,
     })
+    if (sourceTabId) {
+      updateTab(
+        sourceTabId,
+        { collectionRequestId: `${collectionId}:${requestId}`, isDirty: false },
+        false,
+      )
+    }
   }
 
   const copyAsCurl = (request: any) => {
-    const headers = request.headers?.map((h: any) => `-H "${h.key}: ${h.value}"`).join(' ') || ''
+    const headers =
+      request.headers?.map((h: any) => `-H "${h.key}: ${h.value}"`).join(' ') ||
+      ''
     const body = request.body?.content ? `-d '${request.body.content}'` : ''
-    const curl = `curl -X ${request.method} "${request.url}" ${headers} ${body}`.trim()
+    const curl =
+      `curl -X ${request.method} "${request.url}" ${headers} ${body}`.trim()
     navigator.clipboard.writeText(curl)
   }
 
@@ -180,9 +245,14 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
     URL.revokeObjectURL(url)
   }
 
-  const handleOpenCollectionRequest = (collectionId: string, requestId: string, request: any) => {
+  const handleOpenCollectionRequest = (
+    collectionId: string,
+    requestId: string,
+    request: any,
+  ) => {
     // Use the store's openCollectionRequest which handles tab reuse
-    const { openCollectionRequest: openRequest } = useRequestTabsStore.getState()
+    const { openCollectionRequest: openRequest } =
+      useRequestTabsStore.getState()
     openRequest(`${collectionId}:${requestId}`, {
       name: request.name,
       url: request.url,
@@ -195,10 +265,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
 
   if (isCollapsed) {
     return (
-      <div className={cn(
-        "w-10 flex flex-col items-center py-3 bg-sidebar",
-        className
-      )}>
+      <div
+        className={cn(
+          'w-10 flex flex-col items-center py-3 bg-sidebar',
+          className,
+        )}
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -215,14 +287,16 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden bg-sidebar text-sidebar-foreground",
-        className
+        'flex flex-col overflow-hidden bg-sidebar text-sidebar-foreground',
+        className,
       )}
       style={{ width: width || 256 }}
     >
       {/* Header with toggle */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-sidebar-border shrink-0">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Explorer</span>
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Explorer
+        </span>
         <Button
           variant="ghost"
           size="sm"
@@ -279,7 +353,11 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                     className="h-7 text-xs"
                     autoFocus
                   />
-                  <Button size="sm" className="h-7 px-2" onClick={handleAddCollection}>
+                  <Button
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={handleAddCollection}
+                  >
                     Add
                   </Button>
                 </div>
@@ -311,14 +389,14 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                       )}
                     </button>
                     <DropdownMenu>
-                      <DropdownMenuTrigger
-                        className="h-6 w-6 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm"
-                      >
+                      <DropdownMenuTrigger className="h-6 w-6 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm">
                         <MoreHorizontal className="h-3 w-3" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem
-                          onClick={() => setAddingRequestToCollection(collection.id)}
+                          onClick={() =>
+                            setAddingRequestToCollection(collection.id)
+                          }
                           className="text-xs whitespace-nowrap"
                         >
                           <Plus className="h-4 w-4 mr-2" />
@@ -345,8 +423,10 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                             value={newRequestName}
                             onChange={(e) => setNewRequestName(e.target.value)}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleAddRequestToCollection(collection.id)
-                              if (e.key === 'Escape') setAddingRequestToCollection(null)
+                              if (e.key === 'Enter')
+                                handleAddRequestToCollection(collection.id)
+                              if (e.key === 'Escape')
+                                setAddingRequestToCollection(null)
                             }}
                             className="h-6 text-xs"
                             autoFocus
@@ -359,47 +439,78 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                         const request = getRequest(requestId)
                         if (!request) return null
 
-                        const isActive = activeCollectionRequestId === `${collection.id}:${requestId}`
+                        const isActive =
+                          activeCollectionRequestId ===
+                          `${collection.id}:${requestId}`
 
                         return (
-                          <div key={requestId} className="group flex items-center gap-1">
+                          <div
+                            key={requestId}
+                            className="group flex items-center gap-1"
+                          >
                             <button
-                              onClick={() => handleOpenCollectionRequest(collection.id, requestId, request)}
+                              onClick={() =>
+                                handleOpenCollectionRequest(
+                                  collection.id,
+                                  requestId,
+                                  request,
+                                )
+                              }
                               className={cn(
-                                "flex items-center gap-2 flex-1 px-2 py-1 text-sm rounded-sm text-left",
+                                'flex items-center gap-2 flex-1 px-2 py-1 text-sm rounded-sm text-left',
                                 isActive
-                                  ? "bg-secondary text-foreground"
-                                  : "hover:bg-secondary/50 text-muted-foreground hover:text-foreground"
+                                  ? 'bg-secondary text-foreground'
+                                  : 'hover:bg-secondary/50 text-muted-foreground hover:text-foreground',
                               )}
                             >
-                              <span className={cn(
-                                "text-[10px] font-bold uppercase shrink-0 w-8",
-                                request.method === 'GET' && "text-green-500",
-                                request.method === 'POST' && "text-blue-500",
-                                request.method === 'PUT' && "text-orange-500",
-                                request.method === 'DELETE' && "text-red-500",
-                              )}>
+                              <span
+                                className={cn(
+                                  'text-[10px] font-bold uppercase shrink-0 w-8',
+                                  request.method === 'GET' && 'text-green-500',
+                                  request.method === 'POST' && 'text-blue-500',
+                                  request.method === 'PUT' && 'text-orange-500',
+                                  request.method === 'DELETE' && 'text-red-500',
+                                )}
+                              >
                                 {request.method.slice(0, 3)}
                               </span>
-                              <span className="truncate text-xs">{request.name || request.url}</span>
+                              <span className="truncate text-xs">
+                                {request.name || request.url}
+                              </span>
                             </button>
                             <DropdownMenu>
-                              <DropdownMenuTrigger
-                                className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm"
-                              >
+                              <DropdownMenuTrigger className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm">
                                 <MoreHorizontal className="h-3 w-3" />
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-auto">
-                                <DropdownMenuItem onClick={() => handleOpenCollectionRequest(collection.id, requestId, request)} className="text-xs whitespace-nowrap">
+                              <DropdownMenuContent
+                                align="end"
+                                className="w-auto"
+                              >
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleOpenCollectionRequest(
+                                      collection.id,
+                                      requestId,
+                                      request,
+                                    )
+                                  }
+                                  className="text-xs whitespace-nowrap"
+                                >
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   Open
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => copyAsCurl(request)} className="text-xs whitespace-nowrap">
+                                <DropdownMenuItem
+                                  onClick={() => copyAsCurl(request)}
+                                  className="text-xs whitespace-nowrap"
+                                >
                                   <Copy className="h-4 w-4 mr-2" />
                                   Copy as cURL
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExport(request)} className="text-xs whitespace-nowrap">
+                                <DropdownMenuItem
+                                  onClick={() => handleExport(request)}
+                                  className="text-xs whitespace-nowrap"
+                                >
                                   <Download className="h-4 w-4 mr-2" />
                                   Export...
                                 </DropdownMenuItem>
@@ -417,11 +528,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                         )
                       })}
 
-                      {collection.requests.length === 0 && addingRequestToCollection !== collection.id && (
-                        <div className="text-xs text-muted-foreground py-1 px-2">
-                          No requests
-                        </div>
-                      )}
+                      {collection.requests.length === 0 &&
+                        addingRequestToCollection !== collection.id && (
+                          <div className="text-xs text-muted-foreground py-1 px-2">
+                            No requests
+                          </div>
+                        )}
                     </div>
                   )}
                 </div>
@@ -446,7 +558,9 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
             )}
             Drafts
             {drafts.length > 0 && (
-              <span className="text-primary font-medium ml-1">{drafts.length}</span>
+              <span className="text-primary font-medium ml-1">
+                {drafts.length}
+              </span>
             )}
             <Button
               variant="ghost"
@@ -469,84 +583,119 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                   No unsaved drafts
                 </div>
               ) : (
-                drafts.map((draft) => (
-                  <div key={draft.id} className="group flex items-center gap-1">
-                    <button
-                      onClick={() => handleDraftClick(draft)}
-                      className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1 text-sm rounded-sm hover:bg-secondary text-left overflow-hidden"
+                drafts.map((draft) => {
+                  const isActiveDraft = activeTabId === draft.id
+
+                  return (
+                    <div
+                      key={draft.id}
+                      className="group flex items-center gap-1"
                     >
-                      <span className={cn(
-                        "text-[10px] w-8 font-bold uppercase shrink-0",
-                        draft.method === 'GET' && "text-green-500",
-                        draft.method === 'POST' && "text-blue-500",
-                        draft.method === 'PUT' && "text-orange-500",
-                        draft.method === 'DELETE' && "text-red-500",
-                      )}>
-                        {draft.method}
-                      </span>
-                      <span className="truncate text-xs min-w-0">{draft.name || draft.url || 'Untitled'}</span>
-                      <span className="text-primary shrink-0 ml-auto">•</span>
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm"
-                      >
-                        <MoreHorizontal className="h-3 w-3" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-auto">
-                        <DropdownMenuItem onClick={() => handleDraftClick(draft)} className="text-xs whitespace-nowrap">
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Open
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleRenameDraft(draft)} className="text-xs whitespace-nowrap">
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Rename...
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicateDraft(draft)} className="text-xs whitespace-nowrap">
-                          <CopyPlus className="h-4 w-4 mr-2" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {collections.length > 0 && (
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="text-xs whitespace-nowrap">
-                              <FolderInput className="h-4 w-4 mr-2" />
-                              Move to Collection
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                              {collections.map((col) => (
-                                <DropdownMenuItem
-                                  key={col.id}
-                                  onClick={() => handleMoveToCollection(draft, col.id)}
-                                  className="text-xs whitespace-nowrap"
-                                >
-                                  <Folder className="h-4 w-4 mr-2" />
-                                  {col.name}
-                                </DropdownMenuItem>
-                              ))}
-                            </DropdownMenuSubContent>
-                          </DropdownMenuSub>
+                      <button
+                        onClick={() => handleDraftClick(draft)}
+                        className={cn(
+                          'flex items-center gap-2 flex-1 min-w-0 px-2 py-1 text-sm rounded-sm text-left overflow-hidden',
+                          isActiveDraft
+                            ? 'bg-secondary text-foreground'
+                            : 'hover:bg-secondary/50 text-muted-foreground hover:text-foreground',
                         )}
-                        <DropdownMenuItem onClick={() => copyAsCurl(draft)} className="text-xs whitespace-nowrap">
-                          <Copy className="h-4 w-4 mr-2" />
-                          Copy as cURL
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExport(draft)} className="text-xs whitespace-nowrap">
-                          <Download className="h-4 w-4 mr-2" />
-                          Export...
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteDraft(draft.id)}
-                          className="text-destructive text-xs whitespace-nowrap"
+                      >
+                        <span
+                          className={cn(
+                            'text-[10px] w-8 font-bold uppercase shrink-0',
+                            draft.method === 'GET' && 'text-green-500',
+                            draft.method === 'POST' && 'text-blue-500',
+                            draft.method === 'PUT' && 'text-orange-500',
+                            draft.method === 'DELETE' && 'text-red-500',
+                          )}
                         >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                ))
+                          {draft.method}
+                        </span>
+                        <span className="truncate text-xs min-w-0">
+                          {draft.name || draft.url || 'Untitled'}
+                        </span>
+                        <span className="text-primary shrink-0 ml-auto">•</span>
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-auto">
+                          <DropdownMenuItem
+                            onClick={() => handleDraftClick(draft)}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Open
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleRenameDraft(draft)}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Rename...
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDuplicateDraft(draft)}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            <CopyPlus className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {collections.length > 0 && (
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger className="text-xs whitespace-nowrap">
+                                <FolderInput className="h-4 w-4 mr-2" />
+                                Move to Collection
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {collections.map((col) => (
+                                  <DropdownMenuItem
+                                    key={col.id}
+                                    onClick={() =>
+                                      handleMoveToCollection(
+                                        draft,
+                                        col.id,
+                                        draft.id,
+                                      )
+                                    }
+                                    className="text-xs whitespace-nowrap"
+                                  >
+                                    <Folder className="h-4 w-4 mr-2" />
+                                    {col.name}
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => copyAsCurl(draft)}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Copy as cURL
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleExport(draft)}
+                            className="text-xs whitespace-nowrap"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Export...
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteDraft(draft.id)}
+                            className="text-destructive text-xs whitespace-nowrap"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )
+                })
               )}
             </div>
           )}
@@ -602,38 +751,50 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                   </div>
                 ) : (
                   filteredHistory.map((item) => (
-                    <div key={item.id} className="group flex items-center gap-1">
+                    <div
+                      key={item.id}
+                      className="group flex items-center gap-1"
+                    >
                       <button
                         onClick={() => handleHistoryItemClick(item)}
                         className="flex items-center gap-2 flex-1 px-2 py-1 text-sm rounded-sm hover:bg-secondary text-left min-w-0"
                       >
                         <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className={cn(
-                          "text-[10px] font-bold uppercase shrink-0 w-8",
-                          item.request.method === 'GET' && "text-green-500",
-                          item.request.method === 'POST' && "text-blue-500",
-                          item.request.method === 'PUT' && "text-orange-500",
-                          item.request.method === 'DELETE' && "text-red-500",
-                        )}>
+                        <span
+                          className={cn(
+                            'text-[10px] font-bold uppercase shrink-0 w-8',
+                            item.request.method === 'GET' && 'text-green-500',
+                            item.request.method === 'POST' && 'text-blue-500',
+                            item.request.method === 'PUT' && 'text-orange-500',
+                            item.request.method === 'DELETE' && 'text-red-500',
+                          )}
+                        >
                           {item.request.method}
                         </span>
-                        <span className="truncate text-xs">{item.request.url}</span>
-                        <span className={cn(
-                          "text-[10px] shrink-0 ml-auto",
-                          item.response.status >= 200 && item.response.status < 300 && "text-green-500",
-                          item.response.status >= 400 && "text-red-500",
-                        )}>
+                        <span className="truncate text-xs">
+                          {item.request.url}
+                        </span>
+                        <span
+                          className={cn(
+                            'text-[10px] shrink-0 ml-auto',
+                            item.response.status >= 200 &&
+                              item.response.status < 300 &&
+                              'text-green-500',
+                            item.response.status >= 400 && 'text-red-500',
+                          )}
+                        >
                           {item.response.status}
                         </span>
                       </button>
                       <DropdownMenu>
-                        <DropdownMenuTrigger
-                          className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm"
-                        >
+                        <DropdownMenuTrigger className="h-5 w-5 inline-flex items-center justify-center opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-sm">
                           <MoreHorizontal className="h-3 w-3" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-auto">
-                          <DropdownMenuItem onClick={() => handleHistoryItemClick(item)} className="text-xs whitespace-nowrap">
+                          <DropdownMenuItem
+                            onClick={() => handleHistoryItemClick(item)}
+                            className="text-xs whitespace-nowrap"
+                          >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Open
                           </DropdownMenuItem>
@@ -648,7 +809,12 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                                 {collections.map((col) => (
                                   <DropdownMenuItem
                                     key={col.id}
-                                    onClick={() => handleMoveToCollection(item.request, col.id)}
+                                    onClick={() =>
+                                      handleMoveToCollection(
+                                        item.request,
+                                        col.id,
+                                      )
+                                    }
                                     className="text-xs whitespace-nowrap"
                                   >
                                     <Folder className="h-4 w-4 mr-2" />
@@ -658,11 +824,17 @@ export function Sidebar({ className, isCollapsed = false, onToggle, width }: Sid
                               </DropdownMenuSubContent>
                             </DropdownMenuSub>
                           )}
-                          <DropdownMenuItem onClick={() => copyAsCurl(item.request)} className="text-xs whitespace-nowrap">
+                          <DropdownMenuItem
+                            onClick={() => copyAsCurl(item.request)}
+                            className="text-xs whitespace-nowrap"
+                          >
                             <Copy className="h-4 w-4 mr-2" />
                             Copy as cURL
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleExport(item.request)} className="text-xs whitespace-nowrap">
+                          <DropdownMenuItem
+                            onClick={() => handleExport(item.request)}
+                            className="text-xs whitespace-nowrap"
+                          >
                             <Download className="h-4 w-4 mr-2" />
                             Export...
                           </DropdownMenuItem>
