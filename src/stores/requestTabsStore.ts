@@ -81,7 +81,25 @@ export const useRequestTabsStore = create<RequestTabsState>()(
       _hasHydrated: false,
 
       setHasHydrated: (state: boolean) => {
-        set({ _hasHydrated: state })
+        set((currentState) => {
+          const update: Partial<RequestTabsState> = { _hasHydrated: state }
+          // Ensure activeTabId is valid when hydration completes
+          if (
+            state &&
+            !currentState.activeTabId &&
+            currentState.tabs.length > 0
+          ) {
+            update.activeTabId = currentState.tabs[0].id
+          } else if (
+            state &&
+            currentState.activeTabId &&
+            !currentState.tabs.find((t) => t.id === currentState.activeTabId)
+          ) {
+            // If activeTabId points to a non-existent tab, use the first tab
+            update.activeTabId = currentState.tabs[0].id
+          }
+          return update
+        })
       },
 
       addTab: () => {
@@ -218,18 +236,6 @@ export const useRequestTabsStore = create<RequestTabsState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true)
-        // Ensure activeTabId is valid after rehydration
-        if (state) {
-          if (!state.activeTabId && state.tabs.length > 0) {
-            state.activeTabId = state.tabs[0].id
-          } else if (
-            state.activeTabId &&
-            !state.tabs.find((t) => t.id === state.activeTabId)
-          ) {
-            // If activeTabId points to a non-existent tab, use the first tab
-            state.activeTabId = state.tabs[0].id
-          }
-        }
       },
     },
   ),
