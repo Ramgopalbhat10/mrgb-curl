@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
-import { HttpResponse } from '@/schemas'
+import type { HttpResponse } from '@/schemas'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 // HTTP method type

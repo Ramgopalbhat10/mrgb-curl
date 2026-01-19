@@ -24,7 +24,7 @@ interface AuthEditorProps {
 	className?: string
 }
 
-const AUTH_TYPES: { value: AuthType; label: string }[] = [
+const AUTH_TYPES: Array<{ value: AuthType; label: string }> = [
 	{ value: 'none', label: 'No Auth' },
 	{ value: 'basic', label: 'Basic Auth' },
 	{ value: 'bearer', label: 'Bearer Token' },
@@ -142,7 +142,7 @@ export function AuthEditor({ auth, onChange, className }: AuthEditorProps) {
 							value={auth.apiKey?.addTo || 'header'}
 							onValueChange={(value) => value && onChange({
 								...auth,
-								apiKey: { ...auth.apiKey!, addTo: value as 'header' | 'query' }
+								apiKey: { ...auth.apiKey!, addTo: value }
 							})}
 						>
 							<SelectTrigger className="w-32 h-9">

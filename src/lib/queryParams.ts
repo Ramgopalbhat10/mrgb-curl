@@ -1,4 +1,4 @@
-import { QueryParam } from '@/schemas'
+import type { QueryParam } from '@/schemas'
 
 const extractQueryString = (url: string) => {
   const queryStart = url.indexOf('?')
@@ -9,12 +9,12 @@ const extractQueryString = (url: string) => {
     : url.slice(queryStart + 1, hashStart)
 }
 
-const parseQueryString = (queryString: string): QueryParam[] => {
+const parseQueryString = (queryString: string): Array<QueryParam> => {
   if (!queryString) return []
   const normalized = queryString.startsWith('?')
     ? queryString.slice(1)
     : queryString
-  const params: QueryParam[] = []
+  const params: Array<QueryParam> = []
   const searchParams = new URLSearchParams(normalized)
   searchParams.forEach((value, key) => {
     params.push({ key, value, enabled: true })
@@ -22,7 +22,7 @@ const parseQueryString = (queryString: string): QueryParam[] => {
   return params
 }
 
-export const parseUrlParams = (url: string): QueryParam[] => {
+export const parseUrlParams = (url: string): Array<QueryParam> => {
   if (!url) return []
   try {
     return parseQueryString(new URL(url).search)
@@ -33,7 +33,7 @@ export const parseUrlParams = (url: string): QueryParam[] => {
 
 export const buildUrlWithParams = (
   baseUrl: string,
-  params: QueryParam[],
+  params: Array<QueryParam>,
 ): string => {
   try {
     const urlObj = new URL(baseUrl)

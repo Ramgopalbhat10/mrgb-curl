@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { z } from 'zod'
+import type { HttpMethod } from '@/schemas'
 import { cn } from '@/lib/utils'
-import { HttpMethod } from '@/schemas'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,7 +27,7 @@ interface UrlInputProps {
   className?: string
 }
 
-const httpMethods: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
+const httpMethods: Array<HttpMethod> = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 
 export function UrlInput({
   value,

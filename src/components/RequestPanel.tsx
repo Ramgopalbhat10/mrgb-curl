@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
-import { Header, QueryParam, RequestBody, HttpMethod } from '@/schemas'
 import { HeadersEditor } from './HeadersEditor'
 import { ParamsEditor } from './ParamsEditor'
 import { BodyEditor } from './BodyEditor'
-import { AuthEditor, AuthConfig } from './AuthEditor'
+import { AuthEditor } from './AuthEditor'
+import type { AuthConfig } from './AuthEditor';
+import type { Header, HttpMethod, QueryParam, RequestBody } from '@/schemas'
+import { cn } from '@/lib/utils'
 import { parseUrlParams } from '@/lib/queryParams'
 
 type RequestTab = 'params' | 'headers' | 'auth' | 'body'
@@ -12,13 +13,13 @@ type RequestTab = 'params' | 'headers' | 'auth' | 'body'
 interface RequestPanelProps {
   url: string
   method: HttpMethod
-  headers: Header[]
-  params: QueryParam[]
+  headers: Array<Header>
+  params: Array<QueryParam>
   body: RequestBody | null
   auth: AuthConfig
   onUrlChange: (url: string) => void
-  onHeadersChange: (headers: Header[]) => void
-  onParamsChange: (params: QueryParam[]) => void
+  onHeadersChange: (headers: Array<Header>) => void
+  onParamsChange: (params: Array<QueryParam>) => void
   onBodyChange: (body: RequestBody | null) => void
   onAuthChange: (auth: AuthConfig) => void
   error?: string | null
@@ -26,7 +27,7 @@ interface RequestPanelProps {
   style?: React.CSSProperties
 }
 
-const areParamsEqual = (left: QueryParam[], right: QueryParam[]) => {
+const areParamsEqual = (left: Array<QueryParam>, right: Array<QueryParam>) => {
   if (left.length !== right.length) return false
   return left.every(
     (param, index) =>
@@ -70,7 +71,7 @@ export function RequestPanel({
     onParamsChange([...parsedParams, ...disabledParams])
   }, [url, params, onParamsChange])
 
-  const tabs: { id: RequestTab; label: string; count?: number }[] = [
+  const tabs: Array<{ id: RequestTab; label: string; count?: number }> = [
     {
       id: 'params',
       label: 'Params',

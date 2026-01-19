@@ -1,6 +1,6 @@
 import { useState } from 'react'
+import type { HttpMethod, RequestBody } from '@/schemas'
 import { cn } from '@/lib/utils'
-import { RequestBody, HttpMethod } from '@/schemas'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +20,7 @@ interface BodyEditorProps {
 
 type BodyType = 'none' | 'json' | 'text' | 'form-data' | 'x-www-form-urlencoded'
 
-const BODY_TYPES: { value: BodyType; label: string }[] = [
+const BODY_TYPES: Array<{ value: BodyType; label: string }> = [
     { value: 'none', label: 'None' },
     { value: 'json', label: 'JSON' },
     { value: 'text', label: 'Raw Text' },
@@ -29,7 +29,7 @@ const BODY_TYPES: { value: BodyType; label: string }[] = [
 ]
 
 // Methods that don't support body
-const NO_BODY_METHODS: HttpMethod[] = ['GET', 'HEAD', 'OPTIONS']
+const NO_BODY_METHODS: Array<HttpMethod> = ['GET', 'HEAD', 'OPTIONS']
 
 export function BodyEditor({ body, method, onChange, className }: BodyEditorProps) {
     const [jsonError, setJsonError] = useState<string | null>(null)
@@ -44,7 +44,7 @@ export function BodyEditor({ body, method, onChange, className }: BodyEditorProp
             onChange(null)
         } else {
             onChange({
-                type: newType as RequestBody['type'],
+                type: newType,
                 content: content || (newType === 'json' ? '{\n  \n}' : ''),
             })
         }
@@ -55,7 +55,7 @@ export function BodyEditor({ body, method, onChange, className }: BodyEditorProp
         if (bodyType === 'none') return
 
         onChange({
-            type: bodyType as RequestBody['type'],
+            type: bodyType,
             content: newContent,
         })
 

@@ -1,15 +1,15 @@
+import { Plus, Trash2 } from 'lucide-react'
+import type { QueryParam } from '@/schemas'
 import { cn } from '@/lib/utils'
-import { QueryParam } from '@/schemas'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Plus, Trash2 } from 'lucide-react'
 import { buildUrlWithParams } from '@/lib/queryParams'
 
 interface ParamsEditorProps {
-  params: QueryParam[]
+  params: Array<QueryParam>
   url: string
-  onChange: (params: QueryParam[]) => void
+  onChange: (params: Array<QueryParam>) => void
   onUrlChange?: (url: string) => void
   className?: string
 }

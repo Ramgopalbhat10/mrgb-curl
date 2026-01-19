@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Keyboard, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Keyboard, X } from 'lucide-react'
 
 interface KeyboardShortcutsModalProps {
     open: boolean

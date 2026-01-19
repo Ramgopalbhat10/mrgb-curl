@@ -1,8 +1,8 @@
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
+import type { Header } from '@/schemas'
 import { cn } from '@/lib/utils'
-import { Header } from '@/schemas'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Plus, Trash2, ChevronDown } from 'lucide-react'
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 interface HeadersEditorProps {
-	headers: Header[]
-	onChange: (headers: Header[]) => void
+	headers: Array<Header>
+	onChange: (headers: Array<Header>) => void
 	className?: string
 }
 

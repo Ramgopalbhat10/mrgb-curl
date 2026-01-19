@@ -1,16 +1,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import {
+import type {
   Collection,
   HttpRequest,
-  RequestHistory,
   HttpResponse,
+  RequestHistory,
 } from '@/schemas'
 
 interface CollectionsState {
-  collections: Collection[]
+  collections: Array<Collection>
   requests: Map<string, HttpRequest>
-  history: RequestHistory[]
+  history: Array<RequestHistory>
 
   // Collection actions
   addCollection: (name: string, description?: string) => void
@@ -29,7 +29,7 @@ interface CollectionsState {
   // History actions
   addToHistory: (entry: Omit<RequestHistory, 'id' | 'timestamp'>) => void
   clearHistory: () => void
-  searchHistory: (query: string) => RequestHistory[]
+  searchHistory: (query: string) => Array<RequestHistory>
 }
 
 const generateId = () =>

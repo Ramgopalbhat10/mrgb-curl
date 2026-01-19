@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { cn } from '@/lib/utils'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Keyboard, Settings } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { RequestPanel } from './RequestPanel'
 import { ResponseViewer } from './ResponseViewer'
@@ -10,25 +10,19 @@ import {
   KeyboardShortcutsModal,
   useKeyboardShortcuts,
 } from './KeyboardShortcutsModal'
-import {
-  HttpResponse,
-  HttpMethod,
-  Header,
-  QueryParam,
-  RequestBody,
-} from '@/schemas'
 import { QueryErrorBoundary } from './QueryErrorBoundary'
+import type { Header, HttpMethod, QueryParam, RequestBody } from '@/schemas'
+import type { AuthConfig } from './AuthEditor'
 import { useHttp } from '@/hooks/useHttp'
 import { useRequestTabsStore } from '@/stores/requestTabsStore'
 import { useCollectionsStore } from '@/stores/collectionsStore'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { AuthConfig } from './AuthEditor'
-import { Keyboard, Settings } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
@@ -37,9 +31,6 @@ interface AppShellProps {
 }
 
 export function AppShell({ className }: AppShellProps) {
-  const [currentResponse, setCurrentResponse] = useState<HttpResponse | null>(
-    null,
-  )
   const [sidebarWidth, setSidebarWidth] = useState(256)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   // Start with 50% for response panel
@@ -57,6 +48,7 @@ export function AppShell({ className }: AppShellProps) {
     setActiveTab,
     addTab,
     removeTab,
+    setTabResponse,
   } = useRequestTabsStore()
 
   // Collections store for history
@@ -75,7 +67,7 @@ export function AppShell({ className }: AppShellProps) {
   const activeTab = getActiveTab()
 
   // HTTP hook
-  const { sendRequest, isLoading, error, data } = useHttp()
+  const { sendRequest, isLoading, error } = useHttp()
 
   // State handlers for active tab
   const getCollectionRequestId = (collectionRequestId?: string | null) => {
@@ -127,7 +119,7 @@ export function AppShell({ className }: AppShellProps) {
     }
   }
 
-  const handleHeadersChange = (headers: Header[]) => {
+  const handleHeadersChange = (headers: Array<Header>) => {
     if (activeTab) {
       const shouldMarkDirty = !activeTab.collectionRequestId
       updateTab(activeTab.id, { headers }, shouldMarkDirty)
@@ -138,7 +130,7 @@ export function AppShell({ className }: AppShellProps) {
     }
   }
 
-  const handleParamsChange = (params: QueryParam[]) => {
+  const handleParamsChange = (params: Array<QueryParam>) => {
     if (activeTab) {
       const shouldMarkDirty = !activeTab.collectionRequestId
       updateTab(activeTab.id, { params }, shouldMarkDirty)
@@ -171,7 +163,7 @@ export function AppShell({ className }: AppShellProps) {
     if (!activeTab?.url) return
 
     // Build headers including auth
-    let headers = [...(activeTab.headers || [])]
+    const headers = [...(activeTab.headers || [])]
 
     // Add auth headers
     if (activeTab.auth?.type === 'bearer' && activeTab.auth.bearer?.token) {
@@ -219,6 +211,9 @@ export function AppShell({ className }: AppShellProps) {
 
       // Add to history on success
       if (response) {
+        // Store response in tab
+        setTabResponse(activeTab.id, response)
+
         try {
           // Get hostname for the request name
           let requestName = activeTab.name || 'Request'
@@ -248,19 +243,7 @@ export function AppShell({ className }: AppShellProps) {
     } catch (err) {
       // Error is handled by the hook
     }
-  }, [activeTab, sendRequest, addToHistory])
-
-  // Update response when data changes
-  useEffect(() => {
-    if (data) {
-      setCurrentResponse(data)
-    }
-  }, [data])
-
-  // Clear response when active tab changes
-  useEffect(() => {
-    setCurrentResponse(null)
-  }, [activeTabId])
+  }, [activeTab, sendRequest, addToHistory, setTabResponse])
 
   // Keyboard shortcuts
   const { showShortcuts, setShowShortcuts } = useKeyboardShortcuts()
@@ -476,7 +459,7 @@ export function AppShell({ className }: AppShellProps) {
 
           {/* Response Viewer - Right Column */}
           <ResponseViewer
-            response={currentResponse}
+            response={activeTab?.response || null}
             isLoading={isLoading}
             error={error?.message || null}
             method={activeTab?.method || 'GET'}

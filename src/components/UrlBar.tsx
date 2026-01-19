@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils'
-import { HttpMethod } from '@/schemas'
 import { UrlInput } from './UrlInput'
 import { SendButton } from './SendButton'
+import type { HttpMethod } from '@/schemas'
+import { cn } from '@/lib/utils'
 
 interface UrlBarProps {
 	url: string

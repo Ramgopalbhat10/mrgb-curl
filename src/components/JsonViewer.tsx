@@ -1,7 +1,7 @@
 import { JsonView, allExpanded, collapseAllNested, darkStyles, defaultStyles } from 'react-json-view-lite'
 import 'react-json-view-lite/dist/index.css'
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { useEffect, useState, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react'
 
 interface JsonViewerProps {
 	data: unknown

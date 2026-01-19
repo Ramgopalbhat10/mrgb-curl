@@ -1,7 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { HttpMethod, Header, QueryParam, RequestBody } from '@/schemas'
 import { useEffect, useState } from 'react'
+import type {
+  Header,
+  HttpMethod,
+  HttpResponse,
+  QueryParam,
+  RequestBody,
+} from '@/schemas'
 
 // Request tab data
 interface RequestTabData {
@@ -9,8 +15,8 @@ interface RequestTabData {
   name: string
   url: string
   method: HttpMethod
-  headers: Header[]
-  params: QueryParam[]
+  headers: Array<Header>
+  params: Array<QueryParam>
   body: RequestBody | null
   auth: {
     type: 'none' | 'basic' | 'bearer' | 'api-key'
@@ -20,10 +26,11 @@ interface RequestTabData {
   }
   isDirty: boolean
   collectionRequestId?: string // Track which collection request this tab is for
+  response?: HttpResponse | null // Store response for this tab
 }
 
 interface RequestTabsState {
-  tabs: RequestTabData[]
+  tabs: Array<RequestTabData>
   activeTabId: string | null
   _hasHydrated: boolean
 
@@ -46,6 +53,7 @@ interface RequestTabsState {
   findTabByCollectionRequest: (
     collectionRequestId: string,
   ) => RequestTabData | undefined
+  setTabResponse: (id: string, response: HttpResponse | null) => void
 }
 
 // Generate unique ID
@@ -190,15 +198,38 @@ export const useRequestTabsStore = create<RequestTabsState>()(
           }))
         }
       },
+
+      setTabResponse: (id: string, response: HttpResponse | null) => {
+        set((state) => ({
+          tabs: state.tabs.map((tab) =>
+            tab.id === id ? { ...tab, response } : tab,
+          ),
+        }))
+      },
     }),
     {
       name: 'mrgb-curl-tabs',
       partialize: (state) => ({
-        tabs: state.tabs,
+        tabs: state.tabs.map((tab) => {
+          const { response, ...rest } = tab
+          return rest
+        }),
         activeTabId: state.activeTabId,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true)
+        // Ensure activeTabId is valid after rehydration
+        if (state) {
+          if (!state.activeTabId && state.tabs.length > 0) {
+            state.activeTabId = state.tabs[0].id
+          } else if (
+            state.activeTabId &&
+            !state.tabs.find((t) => t.id === state.activeTabId)
+          ) {
+            // If activeTabId points to a non-existent tab, use the first tab
+            state.activeTabId = state.tabs[0].id
+          }
+        }
       },
     },
   ),

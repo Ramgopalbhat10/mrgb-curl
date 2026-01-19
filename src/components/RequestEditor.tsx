@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
-import { cn } from '@/lib/utils'
-import { HttpMethod } from '@/schemas'
+import { useEffect, useState } from 'react'
 import { UrlInput } from './UrlInput'
 import { SendButton } from './SendButton'
+import type { HttpMethod } from '@/schemas'
+import { cn } from '@/lib/utils'
 import { useHttp } from '@/hooks/useHttp'
 
 interface RequestEditorProps {

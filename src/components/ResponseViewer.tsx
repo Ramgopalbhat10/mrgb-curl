@@ -1,9 +1,11 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import {  useMemo, useState } from 'react'
+import { Check, ChevronDown, ChevronRight, Copy, Download, MoreHorizontal, Search } from 'lucide-react'
+import { JsonViewer } from './JsonViewer'
+import type {CSSProperties} from 'react';
+import type { Header, HttpResponse } from '@/schemas'
 import { cn } from '@/lib/utils'
-import { HttpResponse, Header } from '@/schemas'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Copy, Check, Search, ChevronDown, ChevronRight, MoreHorizontal, Download } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +13,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { JsonViewer } from './JsonViewer'
 
 interface ResponseViewerProps {
   className?: string
@@ -20,7 +21,7 @@ interface ResponseViewerProps {
   error?: string | null
   style?: CSSProperties
   method?: string
-  requestHeaders?: Header[]
+  requestHeaders?: Array<Header>
   requestBody?: string
   requestUrl?: string
 }
@@ -47,7 +48,7 @@ function formatTime(ms: number): string {
 }
 
 // Parse cookies from Set-Cookie headers
-function parseCookies(headers: Header[]): Array<{
+function parseCookies(headers: Array<Header>): Array<{
   name: string
   value: string
   path?: string
@@ -191,7 +192,7 @@ export function ResponseViewer({
     }
   }, [requestUrl])
 
-  const responseTabs: { id: ResponseTab; label: string; count?: number }[] = [
+  const responseTabs: Array<{ id: ResponseTab; label: string; count?: number }> = [
     { id: 'body', label: 'Body' },
     { id: 'headers', label: 'Headers', count: response?.headers.length },
     { id: 'cookies', label: 'Cookies', count: cookies.length },

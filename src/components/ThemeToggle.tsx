@@ -1,5 +1,5 @@
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { Sun, Moon, Monitor } from 'lucide-react'
 import {
 	DropdownMenu,
 	DropdownMenuContent,

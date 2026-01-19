@@ -1,26 +1,26 @@
 import { useState } from 'react'
+import {
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Copy,
+  CopyPlus,
+  Download,
+  ExternalLink,
+  Folder,
+  FolderInput,
+  FolderOpen,
+  MoreHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Plus,
-  Folder,
-  FolderOpen,
-  Clock,
-  ChevronRight,
-  ChevronDown,
-  Trash2,
-  MoreHorizontal,
-  Search,
-  Copy,
-  Pencil,
-  Download,
-  CopyPlus,
-  PanelLeftClose,
-  PanelLeftOpen,
-  ExternalLink,
-  FolderInput,
-} from 'lucide-react'
 import { useCollectionsStore } from '@/stores/collectionsStore'
 import { useRequestTabsStore } from '@/stores/requestTabsStore'
 import {
@@ -28,10 +28,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
-  DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
 interface SidebarProps {
