@@ -77,7 +77,7 @@ export const useRequestTabsStore = create<RequestTabsState>()(
   persist(
     (set, get) => ({
       tabs: [createDefaultTab()],
-      activeTabId: null,
+      activeTabId: createDefaultTab().id,
       _hasHydrated: false,
 
       setHasHydrated: (state: boolean) => {
@@ -235,7 +235,19 @@ export const useRequestTabsStore = create<RequestTabsState>()(
         activeTabId: state.activeTabId,
       }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true)
+        if (state) {
+          state._hasHydrated = true
+          // Ensure activeTabId is valid immediately after rehydration
+          if (!state.activeTabId && state.tabs.length > 0) {
+            state.activeTabId = state.tabs[0].id
+          } else if (
+            state.activeTabId &&
+            !state.tabs.find((t) => t.id === state.activeTabId)
+          ) {
+            // If activeTabId points to a non-existent tab, use the first tab
+            state.activeTabId = state.tabs[0].id
+          }
+        }
       },
     },
   ),
