@@ -73,11 +73,14 @@ const createDefaultTab = (): RequestTabData => ({
   isDirty: false,
 })
 
+// Create the initial default tab ONCE to ensure consistent IDs
+const initialDefaultTab = createDefaultTab()
+
 export const useRequestTabsStore = create<RequestTabsState>()(
   persist(
     (set, get) => ({
-      tabs: [createDefaultTab()],
-      activeTabId: createDefaultTab().id,
+      tabs: [initialDefaultTab],
+      activeTabId: initialDefaultTab.id,
       _hasHydrated: false,
 
       setHasHydrated: (state: boolean) => {
